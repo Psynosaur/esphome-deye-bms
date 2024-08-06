@@ -1,0 +1,1162 @@
+# YAML for ESPHome for Deye RW-M6.1/SE-G5.1Pro Batteries
+# Not all messages are decoded.
+# For both cells and PCS(summary) messages you'll need an ESP32 + MCP2515
+
+esphome:
+  name: "deye-can-bus"
+  friendly_name: Deye Battery CAN
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+# Enable logging
+logger:
+#  level: INFO
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret api_deyecan
+
+ota:
+  - platform: esphome
+    password: !secret ota_deyecan
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+spi:
+  clk_pin: GPIO18 # Change to your wiring needs
+  mosi_pin: GPIO23 # Change to your wiring needs
+  miso_pin: GPIO19 # Change to your wiring needs
+
+canbus:
+###########################################################################################################
+# This is for InterCAN (250KBPS), using MCP2515
+###########################################################################################################
+  - platform: mcp2515
+    cs_pin: GPIO05 # Change to your wiring needs
+    can_id: 6
+    bit_rate: 250KBPS
+    on_frame: 
+########################################################################################################
+# Pack 1: Cell voltages
+########################################################################################################
+    - can_id: 0x04008001
+      use_extended_id: true
+      then:
+        - lambda: |-
+            float cell_01 = ((x[0] << 8) | x[1]) / 1000.0;
+            id(pack_1_cell_01_voltage).publish_state(cell_01);
+            float cell_02 = ((x[2] << 8) | x[3]) / 1000.0;
+            id(pack_1_cell_02_voltage).publish_state(cell_02);
+            float cell_03 = ((x[4] << 8) | x[5]) / 1000.0;
+            id(pack_1_cell_03_voltage).publish_state(cell_03);
+            float cell_04 = ((x[6] << 8) | x[7]) / 1000.0;
+            id(pack_1_cell_04_voltage).publish_state(cell_04);
+    - can_id: 0x04018001
+      use_extended_id: true
+      then:
+        - lambda: |-
+            float cell_05 = ((x[0] << 8) | x[1]) / 1000.0;
+            id(pack_1_cell_05_voltage).publish_state(cell_05);
+            float cell_06 = ((x[2] << 8) | x[3]) / 1000.0;
+            id(pack_1_cell_06_voltage).publish_state(cell_06);
+            float cell_07 = ((x[4] << 8) | x[5]) / 1000.0;
+            id(pack_1_cell_07_voltage).publish_state(cell_07);
+            float cell_08 = ((x[6] << 8) | x[7]) / 1000.0;
+            id(pack_1_cell_08_voltage).publish_state(cell_08);
+    - can_id: 0x04028001
+      use_extended_id: true
+      then:
+        - lambda: |-
+            float cell_09 = ((x[0] << 8) | x[1]) / 1000.0;
+            id(pack_1_cell_09_voltage).publish_state(cell_09);
+            float cell_10 = ((x[2] << 8) | x[3]) / 1000.0;
+            id(pack_1_cell_10_voltage).publish_state(cell_10);
+            float cell_11 = ((x[4] << 8) | x[5]) / 1000.0;
+            id(pack_1_cell_11_voltage).publish_state(cell_11);
+            float cell_12 = ((x[6] << 8) | x[7]) / 1000.0;
+            id(pack_1_cell_12_voltage).publish_state(cell_12);
+    - can_id: 0x04038001
+      use_extended_id: true
+      then:
+        - lambda: |-
+            float cell_13 = ((x[0] << 8) | x[1]) / 1000.0;
+            id(pack_1_cell_13_voltage).publish_state(cell_13);
+            float cell_14 = ((x[2] << 8) | x[3]) / 1000.0;
+            id(pack_1_cell_14_voltage).publish_state(cell_14);
+            float cell_15 = ((x[4] << 8) | x[5]) / 1000.0;
+            id(pack_1_cell_15_voltage).publish_state(cell_15);
+            float cell_16 = ((x[6] << 8) | x[7]) / 1000.0;
+            id(pack_1_cell_16_voltage).publish_state(cell_16);
+    
+########################################################################################################
+# Pack 2: Cell voltages
+########################################################################################################
+    - can_id: 0x04008002
+      use_extended_id: true
+      then:
+        - lambda: |-
+            float cell_01 = ((x[0] << 8) | x[1]) / 1000.0;
+            id(pack_2_cell_01_voltage).publish_state(cell_01);
+            float cell_02 = ((x[2] << 8) | x[3]) / 1000.0;
+            id(pack_2_cell_02_voltage).publish_state(cell_02);
+            float cell_03 = ((x[4] << 8) | x[5]) / 1000.0;
+            id(pack_2_cell_03_voltage).publish_state(cell_03);
+            float cell_04 = ((x[6] << 8) | x[7]) / 1000.0;
+            id(pack_2_cell_04_voltage).publish_state(cell_04);
+    - can_id: 0x04018002
+      use_extended_id: true
+      then:
+        - lambda: |-
+            float cell_05 = ((x[0] << 8) | x[1]) / 1000.0;
+            id(pack_2_cell_05_voltage).publish_state(cell_05);
+            float cell_06 = ((x[2] << 8) | x[3]) / 1000.0;
+            id(pack_2_cell_06_voltage).publish_state(cell_06);
+            float cell_07 = ((x[4] << 8) | x[5]) / 1000.0;
+            id(pack_2_cell_07_voltage).publish_state(cell_07);
+            float cell_08 = ((x[6] << 8) | x[7]) / 1000.0;
+            id(pack_2_cell_08_voltage).publish_state(cell_08);
+    - can_id: 0x04028002
+      use_extended_id: true
+      then:
+        - lambda: |-
+            float cell_09 = ((x[0] << 8) | x[1]) / 1000.0;
+            id(pack_2_cell_09_voltage).publish_state(cell_09);
+            float cell_10 = ((x[2] << 8) | x[3]) / 1000.0;
+            id(pack_2_cell_10_voltage).publish_state(cell_10);
+            float cell_11 = ((x[4] << 8) | x[5]) / 1000.0;
+            id(pack_2_cell_11_voltage).publish_state(cell_11);
+            float cell_12 = ((x[6] << 8) | x[7]) / 1000.0;
+            id(pack_2_cell_12_voltage).publish_state(cell_12);
+    - can_id: 0x04038002
+      use_extended_id: true
+      then:
+        - lambda: |-
+            float cell_13 = ((x[0] << 8) | x[1]) / 1000.0;
+            id(pack_2_cell_13_voltage).publish_state(cell_13);
+            float cell_14 = ((x[2] << 8) | x[3]) / 1000.0;
+            id(pack_2_cell_14_voltage).publish_state(cell_14);
+            float cell_15 = ((x[4] << 8) | x[5]) / 1000.0;
+            id(pack_2_cell_15_voltage).publish_state(cell_15);
+            float cell_16 = ((x[6] << 8) | x[7]) / 1000.0;
+            id(pack_2_cell_16_voltage).publish_state(cell_16);
+            
+##########################################################################################################
+# This is for PCS CAN (500KBPS), using ESP32_CAN
+##########################################################################################################            
+  - platform: esp32_can
+    # id: pcs_can
+    tx_pin: GPIO04
+    rx_pin: GPIO02
+    can_id: 4
+    bit_rate: 500KBPS
+    on_frame:
+#    - can_id:      0  # listen to all messages
+#      can_id_mask: 0   
+    - can_id: 0x351
+      then:
+        - lambda: |-
+            float u_max = ((x[1] << 8) | x[0]) / 10.0;
+            id(battery_charge_voltage).publish_state(u_max);
+            int i_charge = ((x[3] << 8) | x[2]) / 10;
+            id(battery_charge_current_limit).publish_state(i_charge);
+            int i_discharge = ((x[5] << 8) | x[4]) / 10;
+            id(battery_discharge_current_limit).publish_state(i_discharge);
+            float u_min = ((x[7] << 8) | x[6]) / 10.0;
+            id(battery_discharge_voltage).publish_state(u_min);
+          #  ESP_LOGI("canid 0x351:", "U_max: %.1f V, I_charge %d A, I_discharge: %d A, U_min %.1f V", u_max, i_charge, i_discharge, u_min );
+    - can_id: 0x355
+      then:
+        - lambda: |-
+            int soc = ((x[1] << 8) | x[0]);
+            id(battery_soc).publish_state(soc);
+            int soh = ((x[3] << 8) | x[2]);
+            id(battery_soh).publish_state(soh);
+          #  ESP_LOGI("canid 0x355:", "SoC %d %, SoH %d %",soc, soh );
+    - can_id: 0x356
+      then:
+        - lambda: |-
+            float voltage = ((x[1] << 8) | x[0]) / 100.0;
+            id(battery_voltage).publish_state(voltage);
+            float current = ((x[3] << 8) | x[2]) / 10;
+            if(x[3] > 0x80) current = uint16_t(~((x[3] << 8) | x[2]) + 1) / -10.0;
+            id(battery_current).publish_state(current);
+            float temperature = ((x[5] << 8) | x[4]) / 10;
+            id(battery_temperature).publish_state(temperature);
+          #  ESP_LOGI("canid 0x356:", "U: %.1f V, I: %.1f A, T: %.1f °C", voltage, current, temperature );
+
+#Deye specific
+    - can_id: 0x361
+      then:
+        - lambda: |-
+            float cell_u_max = ((x[1] << 8) | x[0]) / 1000.0;
+            id(battery_max_cell_voltage_deye).publish_state(cell_u_max);
+            float cell_u_min = ((x[3] << 8) | x[2]) / 1000.0;
+            id(battery_min_cell_voltage_deye).publish_state(cell_u_min);
+            float temp_max = ((x[5] << 8) | x[4]) / 10.0;
+            id(battery_temp_max_deye).publish_state(temp_max);
+            float temp_min = ((x[7] << 8) | x[6]) / 10.0;
+            id(battery_temp_min_deye).publish_state(temp_min);
+
+    - can_id: 0x371
+      then:
+        - lambda: |-
+            int i_charge = ((x[1] << 8) | x[0]) / 10;
+            id(battery_charge_current_limit_deye).publish_state(i_charge);
+            int i_discharge = ((x[3] << 8) | x[2]) / 10;
+            id(battery_discharge_current_limit_deye).publish_state(i_discharge);
+
+    - can_id: 0x150 #Pack 1
+      then:
+        - lambda: |-
+            float voltage = ((x[1] << 8) | x[0]) / 10.0;
+            id(pack_1_voltage).publish_state(voltage);
+            float current = ((x[3] << 8) | x[2]) / 10.0;
+            if(x[3] > 0x80) current = uint16_t(~((x[3] << 8) | x[2]) + 1) / -10.0;
+            id(pack_1_current).publish_state(current);
+            int soc = ((x[5] << 8) | x[4]) / 10.0;
+            id(pack_1_soc).publish_state(soc);
+            int soh = ((x[7] << 8) | x[6]) / 10.0;
+            id(pack_1_soh).publish_state(soh);
+          #  ESP_LOGI("canid 0x150:", "U : %.1f V, I %.1f A, SoC: %d %, SoH %d %", voltage, current, soc, soh );
+
+    - can_id: 0x151 #Pack 2
+      then:
+        - lambda: |-
+            float voltage = ((x[1] << 8) | x[0]) / 10.0;
+            id(pack_2_voltage).publish_state(voltage);
+            float current = ((x[3] << 8) | x[2]) / 10.0;
+            if(x[3] > 0x80) current = uint16_t(~((x[3] << 8) | x[2]) + 1) / -10.0;
+            id(pack_2_current).publish_state(current);
+            int soc = ((x[5] << 8) | x[4]) / 10.0;
+            id(pack_2_soc).publish_state(soc);
+            int soh = ((x[7] << 8) | x[6]) / 10.0;
+            id(pack_2_soh).publish_state(soh);
+          #  ESP_LOGI("canid 0x151:", "U : %.1f V, I %.1f A, SoC: %d %, SoH %d %", voltage, current, soc, soh );
+
+    - can_id: 0x152 #Pack 3
+      then:
+        - lambda: |-
+            float voltage = ((x[1] << 8) | x[0]) / 10.0;
+            id(pack_3_voltage).publish_state(voltage);
+            float current = ((x[3] << 8) | x[2]) / 10.0;
+            if(x[3] > 0x80) current = uint16_t(~((x[3] << 8) | x[2]) + 1) / -10.0;
+            id(pack_3_current).publish_state(current);
+            int soc = ((x[5] << 8) | x[4]) / 10.0;
+            id(pack_3_soc).publish_state(soc);
+            int soh = ((x[7] << 8) | x[6]) / 10.0;
+            id(pack_3_soh).publish_state(soh);
+          #  ESP_LOGI("canid 0x152:", "U : %.1f V, I %.1f A, SoC: %d %, SoH %d %", voltage, current, soc, soh );
+
+    - can_id: 0x200 #Pack 1
+      then:
+        - lambda: |-
+            float cell_u_max = ((x[1] << 8) | x[0]) / 1000.0;
+            id(pack_1_max_cell_voltage).publish_state(cell_u_max);
+            float cell_u_min = ((x[3] << 8) | x[2]) / 1000.0;
+            id(pack_1_min_cell_voltage).publish_state(cell_u_min);
+            float temp_max = ((x[5] << 8) | x[4]) / 10.0;
+            id(pack_1_temp_max).publish_state(temp_max);
+            float temp_min = ((x[7] << 8) | x[6]) / 10.0;
+            id(pack_1_temp_min).publish_state(temp_min);
+          #  ESP_LOGI("canid 0x200:", "U cell max: %.3f V, U cell min %.3f V, Temp max: %.1f, T_min %.1f V", cell_u_max, cell_u_min, temp_max, temp_min );
+    
+    - can_id: 0x201 #Pack 2
+      then:
+        - lambda: |-
+            float cell_u_max = ((x[1] << 8) | x[0]) / 1000.0;
+            id(pack_2_max_cell_voltage).publish_state(cell_u_max);
+            float cell_u_min = ((x[3] << 8) | x[2]) / 1000.0;
+            id(pack_2_min_cell_voltage).publish_state(cell_u_min);
+            float temp_max = ((x[5] << 8) | x[4]) / 10.0;
+            id(pack_2_temp_max).publish_state(temp_max);
+            float temp_min = ((x[7] << 8) | x[6]) / 10.0;
+            id(pack_2_temp_min).publish_state(temp_min);
+    
+    - can_id: 0x202 #Pack 3
+      then:
+        - lambda: |-
+            float cell_u_max = ((x[1] << 8) | x[0]) / 1000.0;
+            id(pack_3_max_cell_voltage).publish_state(cell_u_max);
+            float cell_u_min = ((x[3] << 8) | x[2]) / 1000.0;
+            id(pack_3_min_cell_voltage).publish_state(cell_u_min);
+            float temp_max = ((x[5] << 8) | x[4]) / 10.0;
+            id(pack_3_temp_max).publish_state(temp_max);
+            float temp_min = ((x[7] << 8) | x[6]) / 10.0;
+            id(pack_3_temp_min).publish_state(temp_min);
+
+    - can_id: 0x250 #Pack 1
+      then:
+        - lambda: |-
+            float mosmax = ((x[1] << 8) | x[0]) / 10.0;
+            if(x[1] > 0x80) mosmax = uint16_t(~((x[1] << 8) | x[0]) + 1) / -10.0;
+            id(pack_1_mosmax).publish_state(mosmax);
+            float heatmem = (x[3] << 8) | x[2];
+            if(x[3] > 0x80) heatmem = uint16_t(~((x[3] << 8) | x[2]) + 1) / -10.0;
+            id(pack_1_heatmem).publish_state(heatmem);
+            int val3 = (x[5] << 8) | x[4];
+            int val4 = (x[7] << 8) | x[6];
+            ESP_LOGI("canid 0x250:", "%.1f, %.1f, %d, %d", mosmax, heatmem, val3, val4 );
+    
+    - can_id: 0x251 #Pack 2
+      then:
+        - lambda: |-
+            float mosmax = ((x[1] << 8) | x[0]) / 10.0;
+            if(x[1] > 0x80) mosmax = uint16_t(~((x[1] << 8) | x[0]) + 1) / -10.0;
+            id(pack_2_mosmax).publish_state(mosmax);
+            float heatmem = (x[3] << 8) | x[2];
+            if(x[3] > 0x80) heatmem = uint16_t(~((x[3] << 8) | x[2]) + 1) / -10.0;
+            id(pack_2_heatmem).publish_state(heatmem);
+  # ???        int val3 = (x[5] << 8) | x[4];
+  # ???        int val4 = (x[7] << 8) | x[6];
+  #            ESP_LOGI("canid 0x250:", "%.1f, %.1f, %d, %d", mosmax, heatmem, val3, val4 );
+    
+    - can_id: 0x252 #Pack 3
+      then:
+        - lambda: |-
+            float mosmax = ((x[1] << 8) | x[0]) / 10.0;
+            if(x[1] > 0x80) mosmax = uint16_t(~((x[1] << 8) | x[0]) + 1) / -10.0;
+            id(pack_3_mosmax).publish_state(mosmax);
+            float heatmem = (x[3] << 8) | x[2];
+            if(x[3] > 0x80) heatmem = uint16_t(~((x[3] << 8) | x[2]) + 1) / -10.0;
+            id(pack_3_heatmem).publish_state(heatmem);
+  # ???        int val3 = (x[5] << 8) | x[4];
+  # ???        int val4 = (x[7] << 8) | x[6];
+  #         ESP_LOGI("canid 0x250:", "%.1f, %.1f, %d, %d", mosmax, heatmem, val3, val4 );
+
+    - can_id: 0x400 #Pack 1
+      then:
+        - lambda: |-
+            float cycles = ((x[3] << 8) | x[2]);
+            id(pack_1_cycles).publish_state(cycles);
+
+    - can_id: 0x401 #Pack 2
+      then:
+        - lambda: |-
+            float cycles = ((x[3] << 8) | x[2]);
+            id(pack_2_cycles).publish_state(cycles);
+
+    - can_id: 0x402 #Pack 3
+      then:
+        - lambda: |-
+            float cycles = ((x[3] << 8) | x[2]);
+            id(pack_3_cycles).publish_state(cycles);
+
+    - can_id: 0x550 #Pack 1
+      then:
+        - lambda: |-
+            ESP_LOGI("canid 0x550:", "%02x %02x %02x %02x %02x %02x %02x %02x", x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7]);
+            float charged = ((x[3] << 24) | (x[2] << 16) | (x[1] << 8) | x[0]) / 1000.0;
+            id(pack_1_charged).publish_state(charged);
+            float discharged = ((x[7] << 24) | (x[6] << 16) | (x[5] << 8) | x[5]) / 1000.0;
+            id(pack_1_discharged).publish_state(discharged);
+  #          ESP_LOGI("canid 0x550:", "%.3f kWh, %.3f kWh", charged, discharged );
+
+    - can_id: 0x551 #Pack 2
+      then:
+        - lambda: |-
+            ESP_LOGI("canid 0x551:", "%02x %02x %02x %02x %02x %02x %02x %02x", x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7]);
+            float charged = ((x[3] << 24) | (x[2] << 16) | (x[1] << 8) | x[0]) / 1000.0;
+            id(pack_2_charged).publish_state(charged);
+            float discharged = ((x[7] << 24) | (x[6] << 16) | (x[5] << 8) | x[5]) / 1000.0;
+            id(pack_2_discharged).publish_state(discharged);
+#            ESP_LOGI("canid 0x551:", "%.3f kWh, %.3f kWh", charged, discharged );
+    - can_id: 0x552 #Pack 3
+      then:
+        - lambda: |-
+            ESP_LOGI("canid 0x551:", "%02x %02x %02x %02x %02x %02x %02x %02x", x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7]);
+            float charged = ((x[3] << 24) | (x[2] << 16) | (x[1] << 8) | x[0]) / 1000.0;
+            id(pack_3_charged).publish_state(charged);
+            float discharged = ((x[7] << 24) | (x[6] << 16) | (x[5] << 8) | x[5]) / 1000.0;
+            id(pack_3_discharged).publish_state(discharged);
+#            ESP_LOGI("canid 0x551:", "%.3f kWh, %.3f kWh", charged, discharged );
+
+# # not decoded stuff:
+# #    - can_id: 0x359 #Pack 1
+# #      then:
+# #        - lambda: |-
+# #            ESP_LOGI("canid 0x359:", "%02x %02x %02x %02x %02x %02x %02x %02x", x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7]);
+# #    - can_id: 0x35C #Pack 1
+# #      then:
+# #        - lambda: |-
+# #            ESP_LOGI("canid 0x35C:", "%02x %02x %02x %02x %02x %02x %02x %02x", x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7]);
+
+
+# # 363, byte 0 + 1 = Battery Firmware Vrsion
+# #    - can_id: 0x363 
+# #      then:
+# #        - lambda: |-
+# #           ESP_LOGI("canid 0x363:", "%02x %02x %02x %02x %02x %02x %02x %02x", x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7]);
+# #           int val1 = (x[1] << 8) | x[0];
+# #           int val2 = (x[3] << 8) | x[2];
+# #           int val3 = (x[5] << 8) | x[4];
+# #           int val4 = (x[7] << 8) | x[6];
+# #           ESP_LOGI("canid 0x363:", "%d, %d, %d, %d", val1, val2, val3, val4 );
+
+# # 363: 03 03 00 00 03 00 00 00 3 battery packs
+# # 363: 03 01 00 00 03 00 00 00 3 battery packs
+# # 363: 02 01 00 00 02 00 00 00 2 battery packs
+# # 363: 02 00 00 00 02 00 00 00 2 battery packs
+# # 363: 02 02 00 00 02 00 00 00 2 battery packs fully charged 100% soc 55,40v 3,5-3,3v
+# # 363: 01 00 00 00 01 00 00 00 1 battery pack, ~ 30% SoC not charging, but also charging, also dischaging
+
+# #    - can_id: 0x364 
+# #      then:
+# #        - lambda: |-
+# #           ESP_LOGI("canid 0x364:", "%02x %02x %02x %02x %02x %02x %02x %02x", x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7]);
+# #           int val1 = (x[1] << 8) | x[0];
+# #           int val2 = (x[3] << 8) | x[2];
+# #           int val3 = (x[5] << 8) | x[4];
+# #           int val4 = (x[7] << 8) | x[6];
+# #           ESP_LOGI("canid 0x364:", "%d, %d, %d, %d", val1, val2, val3, val4 );
+
+# #            ESP_LOGD("canid 0x355", "%s", &b[0] );
+# #        - canbus.send:
+# #          canbus_id: 100
+# #          can_id: 0x401
+# #          data: !lambda
+# #            return {0x401, x};
+
+# # 0x110 00 00 00 00 00 00 00 31 or 00 00 00 00 00 00 00 21, 31= charging and discarging allowed, 21= discharging allowed
+# # 0x500 30 06 AA 56 37 2E 30 38: FW: 3006, HW: AA56, ??: 7.08 (ASCII)
+# # 0x600+0x650 Serial number part 1+2 in ASCII
+# # 0x700 Status bits
+# # 0x35e 44 59 30 30 31 05 60 09 -> Protocol name in ASCII, tranlsates to "DEYE" in Deye inverters
+          
+sensor:
+  - platform: template
+    name: "Battery voltage"
+    id: "battery_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 2
+
+  - platform: template
+    name: "Battery current"
+    id: "battery_current"
+    unit_of_measurement: 'A'
+    device_class: 'current'
+    state_class: 'measurement'
+    accuracy_decimals: 1
+
+  - platform: template
+    name: "Battery temperature"
+    id: "battery_temperature"
+    unit_of_measurement: '°C'
+    device_class: 'temperature'
+    state_class: 'measurement'
+    accuracy_decimals: 1
+
+  - platform: template
+    name: "Battery charge voltage"
+    id: "battery_charge_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 2    
+
+  - platform: template
+    name: "Battery discharge voltage"
+    id: "battery_discharge_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 2   
+
+  - platform: template
+    name: "Battery charge current limit"
+    id: "battery_charge_current_limit"
+    unit_of_measurement: 'A'
+    device_class: 'current'
+    state_class: 'measurement'
+    accuracy_decimals: 0
+
+  - platform: template
+    name: "Battery discharge current limit"
+    id: "battery_discharge_current_limit"
+    unit_of_measurement: 'A'
+    device_class: 'current'
+    state_class: 'measurement'
+    accuracy_decimals: 0
+
+  - platform: template
+    name: "Battery SoC"
+    id: "battery_soc"
+    unit_of_measurement: '%'
+    device_class: 'battery'
+    state_class: 'measurement'
+    accuracy_decimals: 0
+
+  - platform: template
+    name: "Battery SoH"
+    id: "battery_soh"
+    unit_of_measurement: '%'
+    device_class: 'battery'
+    state_class: 'measurement'
+    accuracy_decimals: 0
+
+#Deye battery specific    
+  - platform: template
+    name: "Battery max cell voltage Deye"
+    id: "battery_max_cell_voltage_deye"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3    
+
+  - platform: template
+    name: "Battery min cell voltage Deye"
+    id: "battery_min_cell_voltage_deye"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3
+
+  - platform: template
+    name: "Battery temp max Deye"
+    id: "battery_temp_max_deye"
+    unit_of_measurement: '°C'
+    device_class: 'temperature'
+    state_class: 'measurement'
+    accuracy_decimals: 1
+
+  - platform: template
+    name: "Battery temp min Deye"
+    id: "battery_temp_min_deye"
+    unit_of_measurement: '°C'
+    device_class: 'temperature'
+    state_class: 'measurement'
+    accuracy_decimals: 1
+
+  - platform: template
+    name: "Battery charge current limit Deye"
+    id: "battery_charge_current_limit_deye"
+    unit_of_measurement: 'A'
+    device_class: 'current'
+    state_class: 'measurement'
+    accuracy_decimals: 0
+
+  - platform: template
+    name: "Battery discharge current limit Deye"
+    id: "battery_discharge_current_limit_deye"
+    unit_of_measurement: 'A'
+    device_class: 'current'
+    state_class: 'measurement'
+    accuracy_decimals: 0
+
+#Pack 1
+  - platform: template
+    name: "Pack 1 voltage"
+    id: "pack_1_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 2   
+
+  - platform: template
+    name: "Pack 1 current"
+    id: "pack_1_current"
+    unit_of_measurement: 'A'
+    device_class: 'current'
+    state_class: 'measurement'
+    accuracy_decimals: 1
+
+  - platform: template
+    name: "Pack 1 SoC"
+    id: "pack_1_soc"
+    unit_of_measurement: '%'
+    device_class: 'battery'
+    state_class: 'measurement'
+    accuracy_decimals: 0
+
+  - platform: template
+    name: "Pack 1 SoH"
+    id: "pack_1_soh"
+    unit_of_measurement: '%'
+    device_class: 'battery'
+    state_class: 'measurement'
+    accuracy_decimals: 0
+
+  - platform: template
+    name: "Pack 1 max cell voltage"
+    id: "pack_1_max_cell_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3    
+
+  - platform: template
+    name: "Pack 1 min cell voltage"
+    id: "pack_1_min_cell_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3
+    on_value:
+      then:
+        - component.update: pack_1_imbalance 
+
+  - platform: template
+    name: "Pack 1 imbalance"
+    id: "pack_1_imbalance"
+    unit_of_measurement: 'mV'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 0 
+    lambda: |-
+      return ((id(pack_1_max_cell_voltage).state - id(pack_1_min_cell_voltage).state)) * 1000;
+
+  - platform: template
+    name: "Pack 1 temp max"
+    id: "pack_1_temp_max"
+    unit_of_measurement: '°C'
+    device_class: 'temperature'
+    state_class: 'measurement'
+    accuracy_decimals: 1
+
+  - platform: template
+    name: "Pack 1 temp min"
+    id: "pack_1_temp_min"
+    unit_of_measurement: '°C'
+    device_class: 'temperature'
+    state_class: 'measurement'
+    accuracy_decimals: 1
+
+  - platform: template
+    name: "Pack 1 MosMax"
+    id: "pack_1_mosmax"
+    unit_of_measurement: '°C'
+    device_class: 'temperature'
+    state_class: 'measurement'
+    accuracy_decimals: 1
+
+  - platform: template
+    name: "Pack 1 HeatMem"
+    id: "pack_1_heatmem"
+    unit_of_measurement: '°C'
+    device_class: 'temperature'
+    state_class: 'measurement'
+    accuracy_decimals: 1
+
+  - platform: template
+    name: "Pack 1 cycles"
+    id: "pack_1_cycles"
+    state_class: 'measurement'
+    accuracy_decimals: 0  
+
+  - platform: template
+    name: "Pack 1 charged"
+    id: "pack_1_charged"
+    unit_of_measurement: 'kWh'
+    device_class: 'energy'
+    state_class: 'measurement'
+    accuracy_decimals: 3  
+
+  - platform: template
+    name: "Pack 1 discharged"
+    id: "pack_1_discharged"
+    unit_of_measurement: 'kWh'
+    device_class: 'energy'
+    state_class: 'measurement'
+    accuracy_decimals: 3  
+    
+########################################################################################################
+# Pack 1: Cell voltages
+########################################################################################################
+  - platform: template
+    name: "Pack 1: Cell_01"
+    id: "pack_1_cell_01_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
+  - platform: template
+    name: "Pack 1: Cell_02"
+    id: "pack_1_cell_02_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
+  - platform: template
+    name: "Pack 1: Cell_03"
+    id: "pack_1_cell_03_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
+  - platform: template
+    name: "Pack 1: Cell_04"
+    id: "pack_1_cell_04_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
+  - platform: template
+    name: "Pack 1: Cell_05"
+    id: "pack_1_cell_05_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
+  - platform: template
+    name: "Pack 1: Cell_06"
+    id: "pack_1_cell_06_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
+  - platform: template
+    name: "Pack 1: Cell_07"
+    id: "pack_1_cell_07_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
+  - platform: template
+    name: "Pack 1: Cell_08"
+    id: "pack_1_cell_08_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
+  - platform: template
+    name: "Pack 1: Cell_09"
+    id: "pack_1_cell_09_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
+  - platform: template
+    name: "Pack 1: Cell_10"
+    id: "pack_1_cell_10_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
+  - platform: template
+    name: "Pack 1: Cell_11"
+    id: "pack_1_cell_11_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
+  - platform: template
+    name: "Pack 1: Cell_12"
+    id: "pack_1_cell_12_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
+  - platform: template
+    name: "Pack 1: Cell_13"
+    id: "pack_1_cell_13_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
+  - platform: template
+    name: "Pack 1: Cell_14"
+    id: "pack_1_cell_14_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
+  - platform: template
+    name: "Pack 1: Cell_15"
+    id: "pack_1_cell_15_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
+  - platform: template
+    name: "Pack 1: Cell_16"
+    id: "pack_1_cell_16_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
+#Pack 2
+  - platform: template
+    name: "Pack 2 voltage"
+    id: "pack_2_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 2   
+
+  - platform: template
+    name: "Pack 2 current"
+    id: "pack_2_current"
+    unit_of_measurement: 'A'
+    device_class: 'current'
+    state_class: 'measurement'
+    accuracy_decimals: 1
+
+  - platform: template
+    name: "Pack 2 SoC"
+    id: "pack_2_soc"
+    unit_of_measurement: '%'
+    device_class: 'battery'
+    state_class: 'measurement'
+    accuracy_decimals: 0
+
+  - platform: template
+    name: "Pack 2 SoH"
+    id: "pack_2_soh"
+    unit_of_measurement: '%'
+    device_class: 'battery'
+    state_class: 'measurement'
+    accuracy_decimals: 0
+
+  - platform: template
+    name: "Pack 2 max cell voltage"
+    id: "pack_2_max_cell_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3    
+
+  - platform: template
+    name: "Pack 2 min cell voltage"
+    id: "pack_2_min_cell_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+    on_value:
+      then:
+        - component.update: pack_2_imbalance 
+
+  - platform: template
+    name: "Pack 2 imbalance"
+    id: "pack_2_imbalance"
+    unit_of_measurement: 'mV'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 0 
+    lambda: |-
+      return ((id(pack_2_max_cell_voltage).state - id(pack_2_min_cell_voltage).state)) * 1000;
+
+  - platform: template
+    name: "Pack 2 temp max"
+    id: "pack_2_temp_max"
+    unit_of_measurement: '°C'
+    device_class: 'temperature'
+    state_class: 'measurement'
+    accuracy_decimals: 1
+
+  - platform: template
+    name: "Pack 2 temp min"
+    id: "pack_2_temp_min"
+    unit_of_measurement: '°C'
+    device_class: 'temperature'
+    state_class: 'measurement'
+    accuracy_decimals: 1
+
+  - platform: template
+    name: "Pack 2 MosMax"
+    id: "pack_2_mosmax"
+    unit_of_measurement: '°C'
+    device_class: 'temperature'
+    state_class: 'measurement'
+    accuracy_decimals: 1
+
+  - platform: template
+    name: "Pack 2 HeatMem"
+    id: "pack_2_heatmem"
+    unit_of_measurement: '°C'
+    device_class: 'temperature'
+    state_class: 'measurement'
+    accuracy_decimals: 1
+
+  - platform: template
+    name: "Pack 2 cycles"
+    id: "pack_2_cycles"
+    state_class: 'measurement'
+    accuracy_decimals: 0 
+
+  - platform: template
+    name: "Pack 2 charged"
+    id: "pack_2_charged"
+    unit_of_measurement: 'kWh'
+    device_class: 'energy'
+    state_class: 'measurement'
+    accuracy_decimals: 3  
+
+  - platform: template
+    name: "Pack 2 discharged"
+    id: "pack_2_discharged"
+    unit_of_measurement: 'kWh'
+    device_class: 'energy'
+    state_class: 'measurement'
+    accuracy_decimals: 3  
+  
+########################################################################################################
+# Pack 2: Cell voltages
+########################################################################################################
+  - platform: template
+    name: "Pack 2: Cell_01"
+    id: "pack_2_cell_01_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
+  - platform: template
+    name: "Pack 2: Cell_02"
+    id: "pack_2_cell_02_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
+  - platform: template
+    name: "Pack 2: Cell_03"
+    id: "pack_2_cell_03_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
+  - platform: template
+    name: "Pack 2: Cell_04"
+    id: "pack_2_cell_04_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
+  - platform: template
+    name: "Pack 2: Cell_05"
+    id: "pack_2_cell_05_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
+  - platform: template
+    name: "Pack 2: Cell_06"
+    id: "pack_2_cell_06_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
+  - platform: template
+    name: "Pack 2: Cell_07"
+    id: "pack_2_cell_07_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
+  - platform: template
+    name: "Pack 2: Cell_08"
+    id: "pack_2_cell_08_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
+  - platform: template
+    name: "Pack 2: Cell_09"
+    id: "pack_2_cell_09_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
+  - platform: template
+    name: "Pack 2: Cell_10"
+    id: "pack_2_cell_10_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
+  - platform: template
+    name: "Pack 2: Cell_11"
+    id: "pack_2_cell_11_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
+  - platform: template
+    name: "Pack 2: Cell_12"
+    id: "pack_2_cell_12_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
+  - platform: template
+    name: "Pack 2: Cell_13"
+    id: "pack_2_cell_13_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
+  - platform: template
+    name: "Pack 2: Cell_14"
+    id: "pack_2_cell_14_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
+  - platform: template
+    name: "Pack 2: Cell_15"
+    id: "pack_2_cell_15_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
+  - platform: template
+    name: "Pack 2: Cell_16"
+    id: "pack_2_cell_16_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
+#Pack 3
+  - platform: template
+    name: "Pack 3 voltage"
+    id: "pack_3_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 2   
+
+  - platform: template
+    name: "Pack 3 current"
+    id: "pack_3_current"
+    unit_of_measurement: 'A'
+    device_class: 'current'
+    state_class: 'measurement'
+    accuracy_decimals: 1
+
+  - platform: template
+    name: "Pack 3 SoC"
+    id: "pack_3_soc"
+    unit_of_measurement: '%'
+    device_class: 'battery'
+    state_class: 'measurement'
+    accuracy_decimals: 0
+
+  - platform: template
+    name: "Pack 3 SoH"
+    id: "pack_3_soh"
+    unit_of_measurement: '%'
+    device_class: 'battery'
+    state_class: 'measurement'
+    accuracy_decimals: 0
+
+  - platform: template
+    name: "Pack 3 max cell voltage"
+    id: "pack_3_max_cell_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3    
+
+  - platform: template
+    name: "Pack 3 min cell voltage"
+    id: "pack_3_min_cell_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+    on_value:
+      then:
+        - component.update: pack_3_imbalance 
+
+  - platform: template
+    name: "Pack 3 imbalance"
+    id: "pack_3_imbalance"
+    unit_of_measurement: 'mV'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 0 
+    lambda: |-
+      return ((id(pack_3_max_cell_voltage).state - id(pack_3_min_cell_voltage).state)) * 1000;
+
+  - platform: template
+    name: "Pack 3 temp max"
+    id: "pack_3_temp_max"
+    unit_of_measurement: '°C'
+    device_class: 'temperature'
+    state_class: 'measurement'
+    accuracy_decimals: 1
+
+  - platform: template
+    name: "Pack 3 MosMax"
+    id: "pack_3_mosmax"
+    unit_of_measurement: '°C'
+    device_class: 'temperature'
+    state_class: 'measurement'
+    accuracy_decimals: 1
+
+  - platform: template
+    name: "Pack 3 HeatMem"
+    id: "pack_3_heatmem"
+    unit_of_measurement: '°C'
+    device_class: 'temperature'
+    state_class: 'measurement'
+    accuracy_decimals: 1
+
+  - platform: template
+    name: "Pack 3 temp min"
+    id: "pack_3_temp_min"
+    unit_of_measurement: '°C'
+    device_class: 'temperature'
+    state_class: 'measurement'
+    accuracy_decimals: 1
+
+  - platform: template
+    name: "Pack 3 cycles"
+    id: "pack_3_cycles"
+    state_class: 'measurement'
+    accuracy_decimals: 0 
+
+  - platform: template
+    name: "Pack 3 charged"
+    id: "pack_3_charged"
+    unit_of_measurement: 'kWh'
+    device_class: 'energy'
+    state_class: 'measurement'
+    accuracy_decimals: 3  
+
+  - platform: template
+    name: "Pack 3 discharged"
+    id: "pack_3_discharged"
+    unit_of_measurement: 'kWh'
+    device_class: 'energy'
+    state_class: 'measurement'
+    accuracy_decimals: 3  
+  
