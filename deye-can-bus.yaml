@@ -14,7 +14,7 @@ esp32:
 # Enable logging
 logger:
   baud_rate: 0 # disable UART logger
-  level: WARN
+  level: INFO
 
 # Enable webserver
 web_server:
@@ -67,11 +67,11 @@ canbus:
             float high_cell = ((x[0] << 8) | x[1]) / 1000.0;
             id(pack_1_cell_high_voltage).publish_state(high_cell);
             int high_position = x[2];
-            id(pack_1_cell_h).publish_state(high_position);
+            id(pack_1_cell_h).publish_state(std::to_string(high_position).c_str());
             float low_cell = ((x[3] << 8) | x[4]) / 1000.0;
             id(pack_1_cell_low_voltage).publish_state(low_cell);
             int low_position = x[5];
-            id(pack_1_cell_l).publish_state(low_position);
+            id(pack_1_cell_l).publish_state(std::to_string(low_position).c_str());
     - can_id: 0x04008001
       use_extended_id: true
       then:
@@ -131,11 +131,11 @@ canbus:
             float high_cell = ((x[0] << 8) | x[1]) / 1000.0;
             id(pack_2_cell_high_voltage).publish_state(high_cell);
             int high_position = x[2];
-            id(pack_2_cell_h).publish_state(high_position);
+            id(pack_2_cell_h).publish_state(std::to_string(high_position).c_str());
             float low_cell = ((x[3] << 8) | x[4]) / 1000.0;
             id(pack_2_cell_low_voltage).publish_state(low_cell);
             int low_position = x[5];
-            id(pack_2_cell_l).publish_state(low_position);
+            id(pack_2_cell_l).publish_state(std::to_string(low_position).c_str());
     - can_id: 0x04008002
       use_extended_id: true
       then:
@@ -590,7 +590,10 @@ sensor:
     state_class: 'measurement'
     accuracy_decimals: 0
 
-#Pack 1
+########################################################################################################
+# Pack 1: 
+######################################################################################################## 
+
   - platform: template
     name: "Pack 1 voltage"
     id: "pack_1_voltage"
@@ -705,10 +708,11 @@ sensor:
     device_class: 'energy'
     state_class: 'measurement'
     accuracy_decimals: 3  
-    
+
 ########################################################################################################
-# Pack 1: Cell voltages
-########################################################################################################
+# Pack 1: Cell High and Lows
+########################################################################################################   
+
   - platform: template
     name: "Pack 1: Cell_high"
     id: "pack_1_cell_high_voltage"
@@ -718,12 +722,6 @@ sensor:
     accuracy_decimals: 3 
 
   - platform: template
-    name: "Pack 1: Pos High"
-    id: "pack_1_cell_h"
-    state_class: 'measurement'
-    accuracy_decimals: 0
-
-  - platform: template
     name: "Pack 1: Cell_low"
     id: "pack_1_cell_low_voltage"
     unit_of_measurement: 'V'
@@ -731,11 +729,9 @@ sensor:
     state_class: 'measurement'
     accuracy_decimals: 3 
 
-  - platform: template
-    name: "Pack 1: Pos Low"
-    id: "pack_1_cell_l"
-    state_class: 'measurement'
-    accuracy_decimals: 0
+########################################################################################################
+# Pack 1: Cell voltages
+########################################################################################################
 
   - platform: template
     name: "Pack 1: Cell_01"
@@ -864,35 +860,10 @@ sensor:
     device_class: 'voltage'
     state_class: 'measurement'
     accuracy_decimals: 3 
-
-#Pack 2
-  - platform: template
-    name: "Pack 2: Cell_high"
-    id: "pack_2_cell_high_voltage"
-    unit_of_measurement: 'V'
-    device_class: 'voltage'
-    state_class: 'measurement'
-    accuracy_decimals: 3 
-
-  - platform: template
-    name: "Pack 2: Pos High"
-    id: "pack_2_cell_h"
-    state_class: 'measurement'
-    accuracy_decimals: 0
-
-  - platform: template
-    name: "Pack 2: Cell_low"
-    id: "pack_2_cell_low_voltage"
-    unit_of_measurement: 'V'
-    device_class: 'voltage'
-    state_class: 'measurement'
-    accuracy_decimals: 3 
-
-  - platform: template
-    name: "Pack 2: Pos Low"
-    id: "pack_2_cell_l"
-    state_class: 'measurement'
-    accuracy_decimals: 0
+    
+########################################################################################################
+# Pack 2: 
+########################################################################################################  
 
   - platform: template
     name: "Pack 2 voltage"
@@ -1008,10 +979,31 @@ sensor:
     device_class: 'energy'
     state_class: 'measurement'
     accuracy_decimals: 3  
-  
+
+########################################################################################################
+# Pack 2: Cell High and Lows
+########################################################################################################  
+
+  - platform: template
+    name: "Pack 2: Cell_high"
+    id: "pack_2_cell_high_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
+  - platform: template
+    name: "Pack 2: Cell_low"
+    id: "pack_2_cell_low_voltage"
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3 
+
 ########################################################################################################
 # Pack 2: Cell voltages
 ########################################################################################################
+
   - platform: template
     name: "Pack 2: Cell_01"
     id: "pack_2_cell_01_voltage"
@@ -1139,7 +1131,30 @@ sensor:
     device_class: 'voltage'
     state_class: 'measurement'
     accuracy_decimals: 3 
-    
+
+########################################################################################################
+# Pack 1 and 2: Cell High and Lows
+########################################################################################################  
+text_sensor:
+  - platform: template
+    name: "Pack 1: Cell High"
+    id: "pack_1_cell_h"
+
+  - platform: template
+    name: "Pack 1: Cell Low"
+    id: "pack_1_cell_l"
+
+  - platform: template
+    name: "Pack 2: Cell High"
+    id: "pack_2_cell_h"
+
+  - platform: template
+    name: "Pack 2: Cell Low"
+    id: "pack_2_cell_l"
+
+########################################################################################################
+# CAN Senders
+########################################################################################################
 # switch:
 #   - platform: template
 #     id: "charge_discharge_off_button"
