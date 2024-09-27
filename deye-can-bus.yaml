@@ -57,10 +57,12 @@ canbus:
     # clock: 8MHZ
     # use_extended_id: True
     on_frame: 
-########################################################################################################
+
+###########################################################################################################
 # Pack 1: Cell voltages
-########################################################################################################
-    - can_id: 0x02098001
+###########################################################################################################
+
+    - can_id: 0x02098001 
       use_extended_id: true
       then:
         - lambda: |-
@@ -121,9 +123,10 @@ canbus:
             float cell_16 = ((x[6] << 8) | x[7]) / 1000.0;
             id(pack_1_cell_16_voltage).publish_state(cell_16);
     
-########################################################################################################
+###########################################################################################################
 # Pack 2: Cell voltages
-########################################################################################################
+###########################################################################################################
+
     - can_id: 0x02098002
       use_extended_id: true
       then:
@@ -185,9 +188,9 @@ canbus:
             float cell_16 = ((x[6] << 8) | x[7]) / 1000.0;
             id(pack_2_cell_16_voltage).publish_state(cell_16);
             
-##########################################################################################################
+###########################################################################################################
 # This is for PCS CAN (500KBPS), using ESP32_CAN
-##########################################################################################################            
+###########################################################################################################            
   - platform: esp32_can
     id: pcs_can
     tx_pin: GPIO04
@@ -196,7 +199,12 @@ canbus:
     bit_rate: 500KBPS
     on_frame:
 #    - can_id:      0  # listen to all messages
-#      can_id_mask: 0   
+#      can_id_mask: 0  
+
+###########################################################################################################
+# Top Computer - BMS
+###########################################################################################################
+
     - can_id: 0x351
       then:
         - lambda: |-
@@ -217,6 +225,77 @@ canbus:
             float soh = ((x[3] << 8) | x[2]);
             id(battery_soh).publish_state(soh);
           #  ESP_LOGI("canid 0x355:", "SoC %d %, SoH %d %",soc, soh );
+
+    - can_id: 0x359
+      then:
+        - lambda: |- 
+            id(cell_under_temperature_charge).publish_state(x[0] & 0x80); # Table 1
+            id(cell_over_temperature_charge).publish_state(x[0] & 0x40);
+            id(discharge_over_current).publish_state(x[0] & 0x20); 
+            id(charge_over_current).publish_state(x[0] & 0x10);
+            id(module_under_voltage).publish_state(x[0] & 0x8);
+            id(module_over_voltage).publish_state(x[0] & 0x4);
+            id(cell_under_voltage).publish_state(x[0] & 0x2);
+            id(cell_over_voltage).publish_state(x[0] & 0x1);
+            
+            id(heating_film_over_temperature).publish_state(x[1] & 0x20);  # Table 2
+            id(mos_over_temperature).publish_state(x[1] & 0x10);
+            id(cell_temperature_over_difference).publish_state(x[1] & 0x8);
+            id(cell_voltage_over_difference).publish_state(x[1] & 0x4);
+            id(cell_under_temperature_discharge).publish_state(x[1] & 0x2);
+            id(cell_over_temperature_discharge).publish_state(x[1] & 0x1);
+            
+            id(master_address_repeat).publish_state(x[3] & 0x08); # Table 4
+            id(pcs_communication_fail).publish_state(x[3] & 0x40);
+            id(internal_communication_fail).publish_state(x[3] & 0x20);
+            id(eeprom_error).publish_state(x[3] & 0x10);
+            id(mosfet_short_circuit).publish_state(x[3] & 0x8);
+            id(temperature_sampling_fail).publish_state(x[3] & 0x4);
+            id(cell_voltage_sampling_fail).publish_state(x[3] & 0x2); 
+            id(afe_communication_fail).publish_state(x[3] & 0x1);
+            
+            id(cell_low_temperature_charge).publish_state(x[4] & 0x80); # Table 5
+            id(cell_high_temperature_charge).publish_state(x[4] & 0x40);
+            id(discharge_high_current).publish_state(x[4] & 0x20); 
+            id(charge_high_current).publish_state(x[4] & 0x01);
+            id(module_low_voltage).publish_state(x[4] & 0x8);
+            id(module_high_voltage).publish_state(x[4] & 0x4);
+            id(cell_low_voltage).publish_state(x[4] & 0x2);
+            id(cell_high_voltage).publish_state(x[4] & 0x1);
+            
+            id(heat_error).publish_state(x[5] & 0x80); # Table 6
+            id(heat_mos_adhession).publish_state(x[5] & 0x40);
+            id(heating_film_high_temperature).publish_state(x[5] & 0x20);
+            id(mos_high_temperature).publish_state(x[5] & 0x10);
+            id(cell_temperature_high_difference).publish_state(x[5] & 0x8);
+            id(cell_voltage_high_difference).publish_state(x[5] & 0x4);
+            id(cell_low_temperature_discharge).publish_state(x[5] & 0x2);
+            id(cell_high_temperature_discharge).publish_state(x[5] & 0x1);
+
+    - can_id: 0x35e
+      then:
+        - lambda: |-
+            int cap = ((x[7] << 8) | x[6]) / 10;
+            id(total_capacity).publish_state(cap);
+            //id(cell_manufacturer).publish_state("undifined");
+            if(x[5] == 1) id(cell_manufacturer).publish_state("GOTION 96Ah");
+            if(x[5] == 2) id(cell_manufacturer).publish_state("CATL 100Ah");
+            if(x[5] == 3) id(cell_manufacturer).publish_state("EVE 100Ah");
+            if(x[5] == 4) id(cell_manufacturer).publish_state("PH 100Ah");
+            if(x[5] == 5) id(cell_manufacturer).publish_state("EVE 120Ah");
+            if(x[5] == 6) id(cell_manufacturer).publish_state("PH 100Ah(214R)");
+            if(x[5] == 7) id(cell_manufacturer).publish_state("ZENERGY 104Ah");
+
+    - can_id: 0x35C
+      then:
+        - lambda: |-
+            id(charging_allowed).publish_state(x[0] & 0x80);
+            id(discharging_allowed).publish_state(x[0] & 0x40);
+            id(request_force_charge_1).publish_state(x[0] & 0x20);
+            id(request_force_charge_2).publish_state(x[0] & 0x10);
+            id(request_full_charge).publish_state(x[0] & 0x08);
+#            ESP_LOGI("canid 0x35C:", "%02x %02x %02x %02x %02x %02x %02x %02x", x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7]); 
+
     - can_id: 0x356
       then:
         - lambda: |-
@@ -230,7 +309,6 @@ canbus:
           #  ESP_LOGI("canid 0x356:", "U: %.1f V, I: %.1f A, T: %.1f °C", voltage, current, temperature );
           #  if(x[3] > 0x80) current = uint16_t(~((x[3] << 8) | x[2]) + 1) / -10.0;
 
-#Deye specific
     - can_id: 0x361
       then:
         - lambda: |-
@@ -243,6 +321,15 @@ canbus:
             float temp_min = ((x[7] << 8) | x[6]) / 10.0;
             id(battery_temp_min_deye).publish_state(temp_min);
 
+    - can_id: 0x364
+      then:
+        - lambda: |-
+            id(module_amount_normal_state).publish_state(x[0]);
+            id(module_amount_charge_disabled).publish_state(x[1]);
+            id(module_amount_discharge_disabled).publish_state(x[2]);
+            id(module_amount_communication_disconnected).publish_state(x[3]);
+            id(module_amount).publish_state(x[4]);
+
     - can_id: 0x371
       then:
         - lambda: |-
@@ -250,7 +337,20 @@ canbus:
             id(battery_charge_current_limit_deye).publish_state(i_charge);
             int i_discharge = ((x[3] << 8) | x[2]) / 10;
             id(battery_discharge_current_limit_deye).publish_state(i_discharge);
-    #Pack 1
+
+###########################################################################################################
+# Pack 1: Frames
+###########################################################################################################
+
+    - can_id: 0x110
+      then:
+        - lambda: |-
+            id(pack_1_heat_mos_state).publish_state(x[3] & 0x80);
+            id(pack_1_precharge_mos_state).publish_state(x[3] & 0x40);
+            id(pack_1_discharge_mos_state).publish_state(x[3] & 0x20);
+            id(pack_1_charge_mos_state).publish_state(x[3] & 0x10);
+            id(pack_1_parallel_finish).publish_state(x[3] & 0x1);
+
     - can_id: 0x150 
       then:
         - lambda: |-
@@ -264,7 +364,107 @@ canbus:
             float soh = ((x[7] << 8) | x[6]) / 10.0;
             id(pack_1_soh).publish_state(soh);
           # ESP_LOGI("canid 0x150:", "U : %.1f V, I %.1f A, SoC: %.1f %, SoH %.1f %", voltage, current, soc, soh );
-    #Pack 2
+
+    - can_id: 0x200 
+      then:
+        - lambda: |-
+            float cell_u_max = ((x[1] << 8) | x[0]) / 1000.0;
+            id(pack_1_max_cell_voltage).publish_state(cell_u_max);
+            float cell_u_min = ((x[3] << 8) | x[2]) / 1000.0;
+            id(pack_1_min_cell_voltage).publish_state(cell_u_min);
+            float temp_max = ((x[5] << 8) | x[4]) / 10.0;
+            id(pack_1_temp_max).publish_state(temp_max);
+            float temp_min = ((x[7] << 8) | x[6]) / 10.0;
+            id(pack_1_temp_min).publish_state(temp_min);
+          #  ESP_LOGI("canid 0x200:", "U cell max: %.3f V, U cell min %.3f V, Temp max: %.1f, T_min %.1f V", cell_u_max, cell_u_min, temp_max, temp_min );     
+
+    - can_id: 0x250 
+      then:
+        - lambda: |-
+            float mosmax = ((x[1] << 8) | x[0]) / 10.0;
+            if(x[1] > 0x80) mosmax = short(~((x[1] << 8) | x[0]) + 1) / -10.0;
+            id(pack_1_mosmax).publish_state(mosmax);
+            float heatmem = (x[3] << 8) | x[2];
+            if(x[3] > 0x80) heatmem = short(~((x[3] << 8) | x[2]) + 1) / -10.0;
+            id(pack_1_heatmem).publish_state(heatmem);
+            int val3 = (x[5] << 8) | x[4];
+            int val4 = (x[7] << 8) | x[6];
+          # ESP_LOGI("canid 0x250:", "%.1f, %.1f, %d, %d", mosmax, heatmem, val3, val4 );
+
+    - can_id: 0x400 
+      then:
+        - lambda: |-
+            if(x[0] == 0) id(pack_1_operation_mode).publish_state("idle");
+            if(x[0] == 1) id(pack_1_operation_mode).publish_state("charging");
+            if(x[0] == 2) id(pack_1_operation_mode).publish_state("discharging");
+            if(x[1] == 0) id(pack_1_fault_level).publish_state("no fault");
+            if(x[1] == 1) id(pack_1_fault_level).publish_state("minor fault");
+            if(x[1] == 2) id(pack_1_fault_level).publish_state("serious fault");
+            float cycles = ((x[3] << 8) | x[2]);
+            id(pack_1_cycles).publish_state(cycles);
+            id(pack_1_cell_1_balancing).publish_state(x[4] & 0x1);
+            id(pack_1_cell_2_balancing).publish_state(x[4] & 0x2);
+            id(pack_1_cell_3_balancing).publish_state(x[4] & 0x4);
+            id(pack_1_cell_4_balancing).publish_state(x[4] & 0x8);
+            id(pack_1_cell_5_balancing).publish_state(x[4] & 0x10);
+            id(pack_1_cell_6_balancing).publish_state(x[4] & 0x20);
+            id(pack_1_cell_7_balancing).publish_state(x[4] & 0x40);
+            id(pack_1_cell_8_balancing).publish_state(x[4] & 0x80);
+            id(pack_1_cell_9_balancing).publish_state(x[5] & 0x1);
+            id(pack_1_cell_10_balancing).publish_state(x[5] & 0x2);
+            id(pack_1_cell_11_balancing).publish_state(x[5] & 0x4);
+            id(pack_1_cell_12_balancing).publish_state(x[5] & 0x8);
+            id(pack_1_cell_13_balancing).publish_state(x[5] & 0x10);
+            id(pack_1_cell_14_balancing).publish_state(x[5] & 0x20);
+            id(pack_1_cell_15_balancing).publish_state(x[5] & 0x40);
+            id(pack_1_cell_16_balancing).publish_state(x[5] & 0x80);
+
+    - can_id: 0x550
+      then:
+        - lambda: |-
+            float charged = ((x[3] << 24) | (x[2] << 16) | (x[1] << 8) | x[0]) / 1000.0;
+            id(pack_1_charged).publish_state(charged);
+            float discharged = ((x[7] << 24) | (x[6] << 16) | (x[5] << 8) | x[5]) / 1000.0;
+            id(pack_1_discharged).publish_state(discharged);
+  #          ESP_LOGI("canid 0x550:", "%.3f kWh, %.3f kWh", charged, discharged );
+  #          ESP_LOGI("canid 0x550:", "%02x %02x %02x %02x %02x %02x %02x %02x", x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7]);
+           
+
+    - can_id: 0x700
+      then:
+        - lambda: | # TODO: Keep value high, the values go to zero then to 7 then zero... ;/ 
+            uint16_t cnt[4];
+            cnt[0] = (x[1] << 8) | x[0];  // charge over voltage count
+            cnt[1] = (x[3] << 8) | x[2];  // discharge under voltage count
+            cnt[2] = (x[5] << 8) | x[4];  // short circuit count
+            cnt[3] = (x[7] << 8) | x[6];  // MOS over temp count
+            
+            if (cnt[0] > 0) id(pack_1_charge_over_voltage_count).publish_state(cnt[0]);
+            if (cnt[1] > 0) id(pack_1_discharge_under_voltage_count).publish_state(cnt[1]);
+            if (cnt[2] > 0) id(pack_1_short_circuit_count).publish_state(cnt[2]);
+            if (cnt[3] > 0) id(pack_1_mos_over_temp_count).publish_state(cnt[3]);
+            
+    - can_id: 0x750
+      then:
+        - lambda: |-
+            id(pack_1_charge_over_current_count).publish_state((x[1] << 8) | x[0]);
+            id(pack_1_discharge_over_current_count).publish_state((x[3] << 8) | x[2]);
+            id(pack_1_charge_over_temp_count).publish_state((x[5] << 8) | x[4]);
+            id(pack_1_discharge_over_temp_count).publish_state((x[7] << 8) | x[6]);
+
+###########################################################################################################
+# Pack 2: Frames
+###########################################################################################################
+
+    - can_id: 0x111
+      then:
+        - lambda: |-
+            id(pack_2_heat_mos_state).publish_state(x[3] & 0x80);
+            id(pack_2_precharge_mos_state).publish_state(x[3] & 0x40);
+            id(pack_2_discharge_mos_state).publish_state(x[3] & 0x20);
+            id(pack_2_charge_mos_state).publish_state(x[3] & 0x10);
+            id(pack_2_parallel_finish).publish_state(x[3] & 0x1);
+    
     - can_id: 0x151 
       then:
         - lambda: |-
@@ -278,35 +478,8 @@ canbus:
             float soh = ((x[7] << 8) | x[6]) / 10.0;
             id(pack_2_soh).publish_state(soh);
           #  ESP_LOGI("canid 0x151:", "U : %.1f V, I %.1f A, SoC: %d %, SoH %d %", voltage, current, soc, soh );
-
-    # - can_id: 0x152 #Pack 3
-    #   then:
-    #     - lambda: |-
-    #         float voltage = ((x[1] << 8) | x[0]) / 10.0;
-    #         id(pack_3_voltage).publish_state(voltage);
-    #         float current = ((x[3] << 8) | x[2]) / 10.0;
-    #         if(x[3] > 0x80) current = uint16_t(~((x[3] << 8) | x[2]) + 1) / -10.0;
-    #         id(pack_3_current).publish_state(current);
-    #         int soc = ((x[5] << 8) | x[4]) / 10.0;
-    #         id(pack_3_soc).publish_state(soc);
-    #         int soh = ((x[7] << 8) | x[6]) / 10.0;
-    #         id(pack_3_soh).publish_state(soh);
-          #  ESP_LOGI("canid 0x152:", "U : %.1f V, I %.1f A, SoC: %d %, SoH %d %", voltage, current, soc, soh );
-
-    - can_id: 0x200 #Pack 1
-      then:
-        - lambda: |-
-            float cell_u_max = ((x[1] << 8) | x[0]) / 1000.0;
-            id(pack_1_max_cell_voltage).publish_state(cell_u_max);
-            float cell_u_min = ((x[3] << 8) | x[2]) / 1000.0;
-            id(pack_1_min_cell_voltage).publish_state(cell_u_min);
-            float temp_max = ((x[5] << 8) | x[4]) / 10.0;
-            id(pack_1_temp_max).publish_state(temp_max);
-            float temp_min = ((x[7] << 8) | x[6]) / 10.0;
-            id(pack_1_temp_min).publish_state(temp_min);
-          #  ESP_LOGI("canid 0x200:", "U cell max: %.3f V, U cell min %.3f V, Temp max: %.1f, T_min %.1f V", cell_u_max, cell_u_min, temp_max, temp_min );
-    
-    - can_id: 0x201 #Pack 2
+ 
+    - can_id: 0x201 
       then:
         - lambda: |-
             float cell_u_max = ((x[1] << 8) | x[0]) / 1000.0;
@@ -316,34 +489,9 @@ canbus:
             float temp_max = ((x[5] << 8) | x[4]) / 10.0;
             id(pack_2_temp_max).publish_state(temp_max);
             float temp_min = ((x[7] << 8) | x[6]) / 10.0;
-            id(pack_2_temp_min).publish_state(temp_min);
+            id(pack_2_temp_min).publish_state(temp_min);  
     
-    # - can_id: 0x202 #Pack 3
-    #   then:
-    #     - lambda: |-
-    #         float cell_u_max = ((x[1] << 8) | x[0]) / 1000.0;
-    #         id(pack_3_max_cell_voltage).publish_state(cell_u_max);
-    #         float cell_u_min = ((x[3] << 8) | x[2]) / 1000.0;
-    #         id(pack_3_min_cell_voltage).publish_state(cell_u_min);
-    #         float temp_max = ((x[5] << 8) | x[4]) / 10.0;
-    #         id(pack_3_temp_max).publish_state(temp_max);
-    #         float temp_min = ((x[7] << 8) | x[6]) / 10.0;
-    #         id(pack_3_temp_min).publish_state(temp_min);
-
-    - can_id: 0x250 #Pack 1
-      then:
-        - lambda: |-
-            float mosmax = ((x[1] << 8) | x[0]) / 10.0;
-            if(x[1] > 0x80) mosmax = short(~((x[1] << 8) | x[0]) + 1) / -10.0;
-            id(pack_1_mosmax).publish_state(mosmax);
-            float heatmem = (x[3] << 8) | x[2];
-            if(x[3] > 0x80) heatmem = short(~((x[3] << 8) | x[2]) + 1) / -10.0;
-            id(pack_1_heatmem).publish_state(heatmem);
-            int val3 = (x[5] << 8) | x[4];
-            int val4 = (x[7] << 8) | x[6];
-            ESP_LOGI("canid 0x250:", "%.1f, %.1f, %d, %d", mosmax, heatmem, val3, val4 );
-    
-    - can_id: 0x251 #Pack 2
+    - can_id: 0x251 
       then:
         - lambda: |-
             float mosmax = ((x[1] << 8) | x[0]) / 10.0;
@@ -352,123 +500,89 @@ canbus:
             float heatmem = (x[3] << 8) | x[2];
             if(x[3] > 0x80) heatmem = short(~((x[3] << 8) | x[2]) + 1) / -10.0;
             id(pack_2_heatmem).publish_state(heatmem);
-  # ???        int val3 = (x[5] << 8) | x[4];
-  # ???        int val4 = (x[7] << 8) | x[6];
-  #            ESP_LOGI("canid 0x250:", "%.1f, %.1f, %d, %d", mosmax, heatmem, val3, val4 );
-    
-    # - can_id: 0x252 #Pack 3
-    #   then:
-    #     - lambda: |-
-    #         float mosmax = ((x[1] << 8) | x[0]) / 10.0;
-    #         if(x[1] > 0x80) mosmax = uint16_t(~((x[1] << 8) | x[0]) + 1) / -10.0;
-    #         id(pack_3_mosmax).publish_state(mosmax);
-    #         float heatmem = (x[3] << 8) | x[2];
-    #         if(x[3] > 0x80) heatmem = uint16_t(~((x[3] << 8) | x[2]) + 1) / -10.0;
-    #         id(pack_3_heatmem).publish_state(heatmem);
-  # ???        int val3 = (x[5] << 8) | x[4];
-  # ???        int val4 = (x[7] << 8) | x[6];
-  #         ESP_LOGI("canid 0x250:", "%.1f, %.1f, %d, %d", mosmax, heatmem, val3, val4 );
 
-    - can_id: 0x400 #Pack 1
+    - can_id: 0x401
       then:
         - lambda: |-
-            float cycles = ((x[3] << 8) | x[2]);
-            id(pack_1_cycles).publish_state(cycles);
-
-    - can_id: 0x401 #Pack 2
-      then:
-        - lambda: |-
+            if(x[0] == 0) id(pack_2_operation_mode).publish_state("idle");
+            if(x[0] == 1) id(pack_2_operation_mode).publish_state("charging");
+            if(x[0] == 2) id(pack_2_operation_mode).publish_state("discharging");
+            if(x[1] == 0) id(pack_2_fault_level).publish_state("no fault");
+            if(x[1] == 1) id(pack_2_fault_level).publish_state("minor fault");
+            if(x[1] == 2) id(pack_2_fault_level).publish_state("serious fault");
             float cycles = ((x[3] << 8) | x[2]);
             id(pack_2_cycles).publish_state(cycles);
-
-    # - can_id: 0x402 #Pack 3
-    #   then:
-    #     - lambda: |-
-    #         float cycles = ((x[3] << 8) | x[2]);
-    #         id(pack_3_cycles).publish_state(cycles);
-
-    - can_id: 0x550 #Pack 1
+            id(pack_2_cell_1_balancing).publish_state(x[4] & 0x1);
+            id(pack_2_cell_2_balancing).publish_state(x[4] & 0x2);
+            id(pack_2_cell_3_balancing).publish_state(x[4] & 0x4);
+            id(pack_2_cell_4_balancing).publish_state(x[4] & 0x8);
+            id(pack_2_cell_5_balancing).publish_state(x[4] & 0x10);
+            id(pack_2_cell_6_balancing).publish_state(x[4] & 0x20);
+            id(pack_2_cell_7_balancing).publish_state(x[4] & 0x40);
+            id(pack_2_cell_8_balancing).publish_state(x[4] & 0x80);
+            id(pack_2_cell_9_balancing).publish_state(x[5] & 0x1);
+            id(pack_2_cell_10_balancing).publish_state(x[5] & 0x2);
+            id(pack_2_cell_11_balancing).publish_state(x[5] & 0x4);
+            id(pack_2_cell_12_balancing).publish_state(x[5] & 0x8);
+            id(pack_2_cell_13_balancing).publish_state(x[5] & 0x10);
+            id(pack_2_cell_14_balancing).publish_state(x[5] & 0x20);
+            id(pack_2_cell_15_balancing).publish_state(x[5] & 0x40);
+            id(pack_2_cell_16_balancing).publish_state(x[5] & 0x80);
+   
+    - can_id: 0x551 
       then:
         - lambda: |-
-            ESP_LOGI("canid 0x550:", "%02x %02x %02x %02x %02x %02x %02x %02x", x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7]);
-            float charged = ((x[3] << 24) | (x[2] << 16) | (x[1] << 8) | x[0]) / 1000.0;
-            id(pack_1_charged).publish_state(charged);
-            float discharged = ((x[7] << 24) | (x[6] << 16) | (x[5] << 8) | x[5]) / 1000.0;
-            id(pack_1_discharged).publish_state(discharged);
-  #          ESP_LOGI("canid 0x550:", "%.3f kWh, %.3f kWh", charged, discharged );
-
-    - can_id: 0x551 #Pack 2
-      then:
-        - lambda: |-
-            ESP_LOGI("canid 0x551:", "%02x %02x %02x %02x %02x %02x %02x %02x", x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7]);
             float charged = ((x[3] << 24) | (x[2] << 16) | (x[1] << 8) | x[0]) / 1000.0;
             id(pack_2_charged).publish_state(charged);
             float discharged = ((x[7] << 24) | (x[6] << 16) | (x[5] << 8) | x[5]) / 1000.0;
             id(pack_2_discharged).publish_state(discharged);
-#            ESP_LOGI("canid 0x551:", "%.3f kWh, %.3f kWh", charged, discharged );
-    # - can_id: 0x552 #Pack 3
-    #   then:
-    #     - lambda: |-
-    #         ESP_LOGI("canid 0x551:", "%02x %02x %02x %02x %02x %02x %02x %02x", x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7]);
-    #         float charged = ((x[3] << 24) | (x[2] << 16) | (x[1] << 8) | x[0]) / 1000.0;
-    #         id(pack_3_charged).publish_state(charged);
-    #         float discharged = ((x[7] << 24) | (x[6] << 16) | (x[5] << 8) | x[5]) / 1000.0;
-    #         id(pack_3_discharged).publish_state(discharged);
-#            ESP_LOGI("canid 0x551:", "%.3f kWh, %.3f kWh", charged, discharged );
-
-# # not decoded stuff:
-# #    - can_id: 0x359 #Pack 1
-# #      then:
-# #        - lambda: |-
-# #            ESP_LOGI("canid 0x359:", "%02x %02x %02x %02x %02x %02x %02x %02x", x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7]);
-# #    - can_id: 0x35C #Pack 1
-# #      then:
-# #        - lambda: |-
-# #            ESP_LOGI("canid 0x35C:", "%02x %02x %02x %02x %02x %02x %02x %02x", x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7]);
-
-
-# # 363, byte 0 + 1 = Battery Firmware Vrsion
-# #    - can_id: 0x363 
-# #      then:
-# #        - lambda: |-
-# #           ESP_LOGI("canid 0x363:", "%02x %02x %02x %02x %02x %02x %02x %02x", x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7]);
-# #           int val1 = (x[1] << 8) | x[0];
-# #           int val2 = (x[3] << 8) | x[2];
-# #           int val3 = (x[5] << 8) | x[4];
-# #           int val4 = (x[7] << 8) | x[6];
-# #           ESP_LOGI("canid 0x363:", "%d, %d, %d, %d", val1, val2, val3, val4 );
-
-# # 363: 03 03 00 00 03 00 00 00 3 battery packs
-# # 363: 03 01 00 00 03 00 00 00 3 battery packs
-# # 363: 02 01 00 00 02 00 00 00 2 battery packs
-# # 363: 02 00 00 00 02 00 00 00 2 battery packs
-# # 363: 02 02 00 00 02 00 00 00 2 battery packs fully charged 100% soc 55,40v 3,5-3,3v
-# # 363: 01 00 00 00 01 00 00 00 1 battery pack, ~ 30% SoC not charging, but also charging, also dischaging
-
-# #    - can_id: 0x364 
-# #      then:
-# #        - lambda: |-
-# #           ESP_LOGI("canid 0x364:", "%02x %02x %02x %02x %02x %02x %02x %02x", x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7]);
-# #           int val1 = (x[1] << 8) | x[0];
-# #           int val2 = (x[3] << 8) | x[2];
-# #           int val3 = (x[5] << 8) | x[4];
-# #           int val4 = (x[7] << 8) | x[6];
-# #           ESP_LOGI("canid 0x364:", "%d, %d, %d, %d", val1, val2, val3, val4 );
-
-# #            ESP_LOGD("canid 0x355", "%s", &b[0] );
-# #        - canbus.send:
-# #          canbus_id: 100
-# #          can_id: 0x401
-# #          data: !lambda
-# #            return {0x401, x};
-
-# # 0x110 00 00 00 00 00 00 00 31 or 00 00 00 00 00 00 00 21, 31= charging and discarging allowed, 21= discharging allowed
-# # 0x500 30 06 AA 56 37 2E 30 38: FW: 3006, HW: AA56, ??: 7.08 (ASCII)
-# # 0x600+0x650 Serial number part 1+2 in ASCII
-# # 0x700 Status bits
-# # 0x35e 44 59 30 30 31 05 60 09 -> Protocol name in ASCII, tranlsates to "DEYE" in Deye inverters
+    
+    - can_id: 0x701 
+      then:
+        - lambda: |-
+            id(pack_2_charge_over_voltage_count).publish_state((x[1] << 8) | x[0]);
+            id(pack_2_discharge_under_voltage_count).publish_state((x[3] << 8) | x[2]);
+            id(pack_2_short_circuit_count).publish_state((x[5] << 8) | x[4]);
+            id(pack_2_mos_over_temp_count).publish_state((x[7] << 8) | x[6]); 
+    
+    - can_id: 0x751 
+      then:
+        - lambda: |-
+            id(pack_2_charge_over_current_count).publish_state((x[1] << 8) | x[0]);
+            id(pack_2_discharge_over_current_count).publish_state((x[3] << 8) | x[2]);
+            id(pack_2_charge_over_temp_count).publish_state((x[5] << 8) | x[4]);
+            id(pack_2_discharge_over_temp_count).publish_state((x[7] << 8) | x[6]);
           
 sensor:
+  - platform: template
+    name: "Module amount normal state"
+    id: "module_amount_normal_state"
+    state_class: 'measurement'
+    accuracy_decimals: 0
+
+  - platform: template
+    name: "Module amount charge disabled"
+    id: "module_amount_charge_disabled"
+    state_class: 'measurement'
+    accuracy_decimals: 0
+
+  - platform: template
+    name: "Module amount discharge disabled"
+    id: "module_amount_discharge_disabled"
+    state_class: 'measurement'
+    accuracy_decimals: 0
+
+  - platform: template
+    name: "Module amount communication disconnected"
+    id: "module_amount_communication_disconnected"
+    state_class: 'measurement'
+    accuracy_decimals: 0
+
+  - platform: template
+    name: "Module amount"
+    id: "module_amount"
+    state_class: 'measurement'
+    accuracy_decimals: 0
   - platform: template
     name: "Battery voltage"
     id: "battery_voltage"
@@ -541,6 +655,15 @@ sensor:
     state_class: 'measurement'
     accuracy_decimals: 0
 
+  - platform: template
+    name: "Total capacity"
+    id: "total_capacity"
+    unit_of_measurement: 'Ah'
+    device_class: 'energy'
+    state_class: 'measurement'
+    accuracy_decimals: 0
+      
+            
 #Deye battery specific    
   - platform: template
     name: "Battery max cell voltage Deye"
@@ -590,9 +713,57 @@ sensor:
     state_class: 'measurement'
     accuracy_decimals: 0
 
-########################################################################################################
+###########################################################################################################
 # Pack 1: 
-######################################################################################################## 
+########################################################################################################### 
+
+  - platform: template
+    name: "Pack 1 charge over voltage count"
+    id: "pack_1_charge_over_voltage_count"
+    state_class: 'measurement'
+    accuracy_decimals: 0   
+
+  - platform: template
+    name: "Pack 1 discharge under voltage count"
+    id: "pack_1_discharge_under_voltage_count"
+    state_class: 'measurement'
+    accuracy_decimals: 0 
+
+  - platform: template
+    name: "Pack 1 short circuit count"
+    id: "pack_1_short_circuit_count"
+    state_class: 'measurement'
+    accuracy_decimals: 0 
+  
+  - platform: template
+    name: "Pack 1 mos over temp count"
+    id: "pack_1_mos_over_temp_count"
+    state_class: 'measurement'
+    accuracy_decimals: 0 
+
+  - platform: template
+    name: "Pack 1 charge over voltage count"
+    id: "pack_1_charge_over_current_count"
+    state_class: 'measurement'
+    accuracy_decimals: 0   
+
+  - platform: template
+    name: "Pack 1 discharge under voltage count"
+    id: "pack_1_discharge_over_current_count"
+    state_class: 'measurement'
+    accuracy_decimals: 0 
+
+  - platform: template
+    name: "Pack 1 charge over temp count"
+    id: "pack_1_charge_over_temp_count"
+    state_class: 'measurement'
+    accuracy_decimals: 0 
+  
+  - platform: template
+    name: "Pack 1 discharge over temp count"
+    id: "pack_1_discharge_over_temp_count"
+    state_class: 'measurement'
+    accuracy_decimals: 0
 
   - platform: template
     name: "Pack 1 voltage"
@@ -709,9 +880,9 @@ sensor:
     state_class: 'measurement'
     accuracy_decimals: 3  
 
-########################################################################################################
+###########################################################################################################
 # Pack 1: Cell High and Lows
-########################################################################################################   
+###########################################################################################################   
 
   - platform: template
     name: "Pack 1: Cell_high"
@@ -729,9 +900,9 @@ sensor:
     state_class: 'measurement'
     accuracy_decimals: 3 
 
-########################################################################################################
+###########################################################################################################
 # Pack 1: Cell voltages
-########################################################################################################
+###########################################################################################################
 
   - platform: template
     name: "Pack 1: Cell_01"
@@ -861,9 +1032,57 @@ sensor:
     state_class: 'measurement'
     accuracy_decimals: 3 
     
-########################################################################################################
+###########################################################################################################
 # Pack 2: 
-########################################################################################################  
+###########################################################################################################  
+
+  - platform: template
+    name: "Pack 2 charge over voltage count"
+    id: "pack_2_charge_over_voltage_count"
+    state_class: 'measurement'
+    accuracy_decimals: 0   
+
+  - platform: template
+    name: "Pack 2 discharge under voltage count"
+    id: "pack_2_discharge_under_voltage_count"
+    state_class: 'measurement'
+    accuracy_decimals: 0
+
+  - platform: template
+    name: "Pack 2 short circuit count"
+    id: "pack_2_short_circuit_count"
+    state_class: 'measurement'
+    accuracy_decimals: 0 
+  
+  - platform: template
+    name: "Pack 2 mos over temp count"
+    id: "pack_2_mos_over_temp_count"
+    state_class: 'measurement'
+    accuracy_decimals: 0 
+
+  - platform: template
+    name: "Pack 2 charge over voltage count"
+    id: "pack_2_charge_over_current_count"
+    state_class: 'measurement'
+    accuracy_decimals: 0   
+
+  - platform: template
+    name: "Pack 2 discharge under voltage count"
+    id: "pack_2_discharge_over_current_count"
+    state_class: 'measurement'
+    accuracy_decimals: 0 
+
+  - platform: template
+    name: "Pack 2 charge over temp count"
+    id: "pack_2_charge_over_temp_count"
+    state_class: 'measurement'
+    accuracy_decimals: 0 
+  
+  - platform: template
+    name: "Pack 2 discharge over temp count"
+    id: "pack_2_discharge_over_temp_count"
+    state_class: 'measurement'
+    accuracy_decimals: 0
 
   - platform: template
     name: "Pack 2 voltage"
@@ -980,9 +1199,9 @@ sensor:
     state_class: 'measurement'
     accuracy_decimals: 3  
 
-########################################################################################################
+###########################################################################################################
 # Pack 2: Cell High and Lows
-########################################################################################################  
+###########################################################################################################  
 
   - platform: template
     name: "Pack 2: Cell_high"
@@ -1000,9 +1219,9 @@ sensor:
     state_class: 'measurement'
     accuracy_decimals: 3 
 
-########################################################################################################
+###########################################################################################################
 # Pack 2: Cell voltages
-########################################################################################################
+###########################################################################################################
 
   - platform: template
     name: "Pack 2: Cell_01"
@@ -1132,10 +1351,15 @@ sensor:
     state_class: 'measurement'
     accuracy_decimals: 3 
 
-########################################################################################################
+###########################################################################################################
 # Pack 1 and 2: Cell High and Lows
-########################################################################################################  
+########################################################################################################### 
+ 
 text_sensor:
+  - platform: template
+    name: "Cell manufacturer"
+    id: "cell_manufacturer"
+
   - platform: template
     name: "Pack 1: Cell High"
     id: "pack_1_cell_h"
@@ -1151,10 +1375,375 @@ text_sensor:
   - platform: template
     name: "Pack 2: Cell Low"
     id: "pack_2_cell_l"
+  
+  - platform: template
+    name: "Pack 1 operation mode"
+    id: "pack_1_operation_mode"
 
-########################################################################################################
+  - platform: template
+    name: "Pack 1 fault level"
+    id: "pack_1_fault_level" 
+
+  - platform: template
+    name: "Pack 2 operation mode"
+    id: "pack_2_operation_mode"
+
+  - platform: template
+    name: "Pack 2 fault level"
+    id: "pack_2_fault_level"
+
+###########################################################################################################
+# Status sensors
+########################################################################################################### 
+
+binary_sensor:
+  # 0x359
+
+  - platform: template
+    name: "Cell under temperature charge"
+    id: "cell_under_temperature_charge"
+
+  - platform: template
+    name: "Cell over temperature charge"
+    id: "cell_over_temperature_charge"
+
+  - platform: template
+    name: "Discharge over current"
+    id: "discharge_over_current"
+
+  - platform: template
+    name: "Charge over current"
+    id: "charge_over_current"
+
+  - platform: template
+    name: "Module under voltage"
+    id: "module_under_voltage"
+
+  - platform: template
+    name: "Module over voltage"
+    id: "module_over_voltage"
+
+  - platform: template
+    name: "Cell under voltage"
+    id: "cell_under_voltage"
+
+  - platform: template
+    name: "Cell over voltage"
+    id: "cell_over_voltage"
+
+  - platform: template
+    name: "Heating film over temperature"
+    id: "heating_film_over_temperature"
+
+  - platform: template
+    name: "Mos over temperature"
+    id: "mos_over_temperature"
+
+  - platform: template
+    name: "Cell temperature over difference"
+    id: "cell_temperature_over_difference"
+
+  - platform: template
+    name: "Cell voltage over difference"
+    id: "cell_voltage_over_difference"
+
+  - platform: template
+    name: "Cell under temperature discharge"
+    id: "cell_under_temperature_discharge"
+
+  - platform: template
+    name: "Cell over temperature discharge"
+    id: "cell_over_temperature_discharge"
+
+  - platform: template
+    name: "Master address_repeat"
+    id: "master_address_repeat"
+
+  - platform: template
+    name: "PCS communication fail"
+    id: "pcs_communication_fail"
+
+  - platform: template
+    name: "Internal communication fail"
+    id: "internal_communication_fail"
+
+  - platform: template
+    name: "EEPROM error"
+    id: "eeprom_error"
+
+  - platform: template
+    name: "Mosfet short circuit"
+    id: "mosfet_short_circuit"            
+
+  - platform: template
+    name: "Temperature sampling fail"
+    id: "temperature_sampling_fail"
+
+  - platform: template
+    name: "Cell voltage sampling fail"
+    id: "cell_voltage_sampling_fail"
+
+  - platform: template
+    name: "AFE communication fail"
+    id: "afe_communication_fail"  
+
+  - platform: template
+    name: "Cell low temperature charge"
+    id: "cell_low_temperature_charge"
+
+  - platform: template
+    name: "Cell high temperature charge"
+    id: "cell_high_temperature_charge"
+
+  - platform: template
+    name: "Discharge high current"
+    id: "discharge_high_current"
+
+  - platform: template
+    name: "Charge high current"
+    id: "charge_high_current"
+
+  - platform: template
+    name: "Module low voltage"
+    id: "module_low_voltage"
+
+  - platform: template
+    name: "Module high voltage"
+    id: "module_high_voltage"
+
+  - platform: template
+    name: "Cell low voltage"
+    id: "cell_low_voltage"
+
+  - platform: template
+    name: "Cell high voltage"
+    id: "cell_high_voltage"
+
+  - platform: template
+    name: "Heat error"
+    id: "heat_error"
+
+  - platform: template
+    name: "Heat mosfet adhession"
+    id: "heat_mos_adhession"
+
+  - platform: template
+    name: "Heating film high temperature"
+    id: "heating_film_high_temperature"
+
+  - platform: template
+    name: "Mosfet high temperature"
+    id: "mos_high_temperature"            
+
+  - platform: template
+    name: "Cell temperature high difference"
+    id: "cell_temperature_high_difference"
+
+  - platform: template
+    name: "Cell voltage high difference"
+    id: "cell_voltage_high_difference"
+
+  - platform: template
+    name: "Cell low temperature discharge"
+    id: "cell_low_temperature_discharge"
+
+  - platform: template
+    name: "Cell high temperature discharge"
+    id: "cell_high_temperature_discharge"       
+    
+  - platform: template
+    name: "Pack 1 cell 01 balancing"
+    id: "pack_1_cell_1_balancing"
+
+  - platform: template
+    name: "Pack 1 cell 02 balancing"
+    id: "pack_1_cell_2_balancing"
+
+  - platform: template
+    name: "Pack 1 cell 03 balancing"
+    id: "pack_1_cell_3_balancing"
+
+  - platform: template
+    name: "Pack 1 cell 04 balancing"
+    id: "pack_1_cell_4_balancing"
+
+  - platform: template
+    name: "Pack 1 cell 05 balancing"
+    id: "pack_1_cell_5_balancing"
+
+  - platform: template
+    name: "Pack 1 cell 06 balancing"
+    id: "pack_1_cell_6_balancing"
+
+  - platform: template
+    name: "Pack 1 cell 07 balancing"
+    id: "pack_1_cell_7_balancing"
+
+  - platform: template
+    name: "Pack 1 cell 08 balancing"
+    id: "pack_1_cell_8_balancing"
+
+  - platform: template
+    name: "Pack 1 cell 09 balancing"
+    id: "pack_1_cell_9_balancing"
+
+  - platform: template
+    name: "Pack 1 cell 10 balancing"
+    id: "pack_1_cell_10_balancing"
+
+  - platform: template
+    name: "Pack 1 cell 11 balancing"
+    id: "pack_1_cell_11_balancing"
+
+  - platform: template
+    name: "Pack 1 cell 12 balancing"
+    id: "pack_1_cell_12_balancing"
+
+  - platform: template
+    name: "Pack 1 cell 13 balancing"
+    id: "pack_1_cell_13_balancing"
+
+  - platform: template
+    name: "Pack 1 cell 14 balancing"
+    id: "pack_1_cell_14_balancing"
+
+  - platform: template
+    name: "Pack 1 cell 15 balancing"
+    id: "pack_1_cell_15_balancing"
+
+  - platform: template
+    name: "Pack 1 cell 16 balancing"
+    id: "pack_1_cell_16_balancing"
+
+  - platform: template
+    name: "Pack 2 cell 01 balancing"
+    id: "pack_2_cell_1_balancing"
+
+  - platform: template
+    name: "Pack 2 cell 02 balancing"
+    id: "pack_2_cell_2_balancing"
+
+  - platform: template
+    name: "Pack 2 cell 03 balancing"
+    id: "pack_2_cell_3_balancing"
+
+  - platform: template
+    name: "Pack 2 cell 04 balancing"
+    id: "pack_2_cell_4_balancing"
+
+  - platform: template
+    name: "Pack 2 cell 05 balancing"
+    id: "pack_2_cell_5_balancing"
+
+  - platform: template
+    name: "Pack 2 cell 06 balancing"
+    id: "pack_2_cell_6_balancing"
+
+  - platform: template
+    name: "Pack 2 cell 07 balancing"
+    id: "pack_2_cell_7_balancing"
+
+  - platform: template
+    name: "Pack 2 cell 08 balancing"
+    id: "pack_2_cell_8_balancing"
+
+  - platform: template
+    name: "Pack 2 cell 09 balancing"
+    id: "pack_2_cell_9_balancing"
+
+  - platform: template
+    name: "Pack 2 cell 10 balancing"
+    id: "pack_2_cell_10_balancing"
+
+  - platform: template
+    name: "Pack 2 cell 11 balancing"
+    id: "pack_2_cell_11_balancing"
+
+  - platform: template
+    name: "Pack 2 cell 12 balancing"
+    id: "pack_2_cell_12_balancing"
+
+  - platform: template
+    name: "Pack 2 cell 13 balancing"
+    id: "pack_2_cell_13_balancing"
+
+  - platform: template
+    name: "Pack 2 cell 14 balancing"
+    id: "pack_2_cell_14_balancing"
+
+  - platform: template
+    name: "Pack 2 cell 15 balancing"
+    id: "pack_2_cell_15_balancing"
+
+  - platform: template
+    name: "Pack 2 cell 16 balancing"
+    id: "pack_2_cell_16_balancing"
+# 0x35C byte 0
+  - platform: template
+    name: "Charging allowed"
+    id: "charging_allowed"
+
+  - platform: template
+    name: "Discharging allowed"
+    id: "discharging_allowed"   
+
+  - platform: template
+    name: "Request force charge 1"
+    id: "request_force_charge_1"
+
+  - platform: template
+    name: "Request force charge 2"
+    id: "request_force_charge_2"
+
+  - platform: template
+    name: "Request full charge"
+    id: "request_full_charge"
+# 0x110
+  - platform: template
+    name: "Pack 1 heat mos state"
+    id: "pack_1_heat_mos_state"
+
+  - platform: template
+    name: "Pack 1 precharge mos state"
+    id: "pack_1_precharge_mos_state"   
+
+  - platform: template
+    name: "Pack 1 discharge mos state"
+    id: "pack_1_discharge_mos_state"
+
+  - platform: template
+    name: "Pack 1 charge mos state"
+    id: "pack_1_charge_mos_state"
+
+  - platform: template
+    name: "Pack 1 parallel finish"
+    id: "pack_1_parallel_finish"
+
+# 0x111
+  - platform: template
+    name: "Pack 2 heat mos state"
+    id: "pack_2_heat_mos_state"
+
+  - platform: template
+    name: "Pack 2 precharge mos state"
+    id: "pack_2_precharge_mos_state"   
+
+  - platform: template
+    name: "Pack 2 discharge mos state"
+    id: "pack_2_discharge_mos_state"
+
+  - platform: template
+    name: "Pack 2 charge mos state"
+    id: "pack_2_charge_mos_state"
+
+  - platform: template
+    name: "Pack 2 parallel finish"
+    id: "pack_2_parallel_finish"
+
+###########################################################################################################
 # CAN Senders
-########################################################################################################
+###########################################################################################################
+
 # switch:
 #   - platform: template
 #     id: "charge_discharge_off_button"
@@ -1208,119 +1797,4 @@ text_sensor:
 #     turn_off_action :
 #     - logger.log: "Switch Turned Off!"
 
-#Pack 3
-  # - platform: template
-  #   name: "Pack 3 voltage"
-  #   id: "pack_3_voltage"
-  #   unit_of_measurement: 'V'
-  #   device_class: 'voltage'
-  #   state_class: 'measurement'
-  #   accuracy_decimals: 2   
-
-  # - platform: template
-  #   name: "Pack 3 current"
-  #   id: "pack_3_current"
-  #   unit_of_measurement: 'A'
-  #   device_class: 'current'
-  #   state_class: 'measurement'
-  #   accuracy_decimals: 1
-
-  # - platform: template
-  #   name: "Pack 3 SoC"
-  #   id: "pack_3_soc"
-  #   unit_of_measurement: '%'
-  #   device_class: 'battery'
-  #   state_class: 'measurement'
-  #   accuracy_decimals: 0
-
-  # - platform: template
-  #   name: "Pack 3 SoH"
-  #   id: "pack_3_soh"
-  #   unit_of_measurement: '%'
-  #   device_class: 'battery'
-  #   state_class: 'measurement'
-  #   accuracy_decimals: 0
-
-  # - platform: template
-  #   name: "Pack 3 max cell voltage"
-  #   id: "pack_3_max_cell_voltage"
-  #   unit_of_measurement: 'V'
-  #   device_class: 'voltage'
-  #   state_class: 'measurement'
-  #   accuracy_decimals: 3    
-
-  # - platform: template
-  #   name: "Pack 3 min cell voltage"
-  #   id: "pack_3_min_cell_voltage"
-  #   unit_of_measurement: 'V'
-  #   device_class: 'voltage'
-  #   state_class: 'measurement'
-  #   accuracy_decimals: 3 
-  #   on_value:
-  #     then:
-  #       - component.update: pack_3_imbalance 
-
-  # - platform: template
-  #   name: "Pack 3 imbalance"
-  #   id: "pack_3_imbalance"
-  #   unit_of_measurement: 'mV'
-  #   device_class: 'voltage'
-  #   state_class: 'measurement'
-  #   accuracy_decimals: 0 
-  #   lambda: |-
-  #     return ((id(pack_3_max_cell_voltage).state - id(pack_3_min_cell_voltage).state)) * 1000;
-
-  # - platform: template
-  #   name: "Pack 3 temp max"
-  #   id: "pack_3_temp_max"
-  #   unit_of_measurement: '°C'
-  #   device_class: 'temperature'
-  #   state_class: 'measurement'
-  #   accuracy_decimals: 1
-
-  # - platform: template
-  #   name: "Pack 3 MosMax"
-  #   id: "pack_3_mosmax"
-  #   unit_of_measurement: '°C'
-  #   device_class: 'temperature'
-  #   state_class: 'measurement'
-  #   accuracy_decimals: 1
-
-  # - platform: template
-  #   name: "Pack 3 HeatMem"
-  #   id: "pack_3_heatmem"
-  #   unit_of_measurement: '°C'
-  #   device_class: 'temperature'
-  #   state_class: 'measurement'
-  #   accuracy_decimals: 1
-
-  # - platform: template
-  #   name: "Pack 3 temp min"
-  #   id: "pack_3_temp_min"
-  #   unit_of_measurement: '°C'
-  #   device_class: 'temperature'
-  #   state_class: 'measurement'
-  #   accuracy_decimals: 1
-
-  # - platform: template
-  #   name: "Pack 3 cycles"
-  #   id: "pack_3_cycles"
-  #   state_class: 'measurement'
-  #   accuracy_decimals: 0 
-
-  # - platform: template
-  #   name: "Pack 3 charged"
-  #   id: "pack_3_charged"
-  #   unit_of_measurement: 'kWh'
-  #   device_class: 'energy'
-  #   state_class: 'measurement'
-  #   accuracy_decimals: 3  
-
-  # - platform: template
-  #   name: "Pack 3 discharged"
-  #   id: "pack_3_discharged"
-  #   unit_of_measurement: 'kWh'
-  #   device_class: 'energy'
-  #   state_class: 'measurement'
-  #   accuracy_decimals: 3  
   
