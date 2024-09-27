@@ -229,7 +229,7 @@ canbus:
     - can_id: 0x359
       then:
         - lambda: |- 
-            id(cell_under_temperature_charge).publish_state(x[0] & 0x80); # Table 1
+            id(cell_under_temperature_charge).publish_state(x[0] & 0x80);
             id(cell_over_temperature_charge).publish_state(x[0] & 0x40);
             id(discharge_over_current).publish_state(x[0] & 0x20); 
             id(charge_over_current).publish_state(x[0] & 0x10);
@@ -238,14 +238,14 @@ canbus:
             id(cell_under_voltage).publish_state(x[0] & 0x2);
             id(cell_over_voltage).publish_state(x[0] & 0x1);
             
-            id(heating_film_over_temperature).publish_state(x[1] & 0x20);  # Table 2
+            id(heating_film_over_temperature).publish_state(x[1] & 0x20);
             id(mos_over_temperature).publish_state(x[1] & 0x10);
             id(cell_temperature_over_difference).publish_state(x[1] & 0x8);
             id(cell_voltage_over_difference).publish_state(x[1] & 0x4);
             id(cell_under_temperature_discharge).publish_state(x[1] & 0x2);
             id(cell_over_temperature_discharge).publish_state(x[1] & 0x1);
             
-            id(master_address_repeat).publish_state(x[3] & 0x08); # Table 4
+            id(master_address_repeat).publish_state(x[3] & 0x08);
             id(pcs_communication_fail).publish_state(x[3] & 0x40);
             id(internal_communication_fail).publish_state(x[3] & 0x20);
             id(eeprom_error).publish_state(x[3] & 0x10);
@@ -254,7 +254,7 @@ canbus:
             id(cell_voltage_sampling_fail).publish_state(x[3] & 0x2); 
             id(afe_communication_fail).publish_state(x[3] & 0x1);
             
-            id(cell_low_temperature_charge).publish_state(x[4] & 0x80); # Table 5
+            id(cell_low_temperature_charge).publish_state(x[4] & 0x80);
             id(cell_high_temperature_charge).publish_state(x[4] & 0x40);
             id(discharge_high_current).publish_state(x[4] & 0x20); 
             id(charge_high_current).publish_state(x[4] & 0x01);
@@ -263,7 +263,7 @@ canbus:
             id(cell_low_voltage).publish_state(x[4] & 0x2);
             id(cell_high_voltage).publish_state(x[4] & 0x1);
             
-            id(heat_error).publish_state(x[5] & 0x80); # Table 6
+            id(heat_error).publish_state(x[5] & 0x80);
             id(heat_mos_adhession).publish_state(x[5] & 0x40);
             id(heating_film_high_temperature).publish_state(x[5] & 0x20);
             id(mos_high_temperature).publish_state(x[5] & 0x10);
