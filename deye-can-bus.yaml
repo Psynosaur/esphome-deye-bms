@@ -14,7 +14,7 @@ esp32:
 # Enable logging
 logger:
   baud_rate: 0 # disable UART logger
-  level: INFO
+  level: WARN
 
 # Enable webserver
 web_server:
@@ -666,7 +666,7 @@ sensor:
             
 #Deye battery specific    
   - platform: template
-    name: "Battery max cell voltage Deye"
+    name: "Battery max cell voltage"
     id: "battery_max_cell_voltage_deye"
     unit_of_measurement: 'V'
     device_class: 'voltage'
@@ -674,7 +674,7 @@ sensor:
     accuracy_decimals: 3    
 
   - platform: template
-    name: "Battery min cell voltage Deye"
+    name: "Battery min cell voltage"
     id: "battery_min_cell_voltage_deye"
     unit_of_measurement: 'V'
     device_class: 'voltage'
@@ -682,7 +682,7 @@ sensor:
     accuracy_decimals: 3
 
   - platform: template
-    name: "Battery temp max Deye"
+    name: "Battery temp max"
     id: "battery_temp_max_deye"
     unit_of_measurement: '°C'
     device_class: 'temperature'
@@ -690,7 +690,7 @@ sensor:
     accuracy_decimals: 1
 
   - platform: template
-    name: "Battery temp min Deye"
+    name: "Battery temp min"
     id: "battery_temp_min_deye"
     unit_of_measurement: '°C'
     device_class: 'temperature'
@@ -698,7 +698,7 @@ sensor:
     accuracy_decimals: 1
 
   - platform: template
-    name: "Battery charge current limit Deye"
+    name: "Battery charge current limit"
     id: "battery_charge_current_limit_deye"
     unit_of_measurement: 'A'
     device_class: 'current'
@@ -706,7 +706,7 @@ sensor:
     accuracy_decimals: 0
 
   - platform: template
-    name: "Battery discharge current limit Deye"
+    name: "Battery discharge current limit"
     id: "battery_discharge_current_limit_deye"
     unit_of_measurement: 'A'
     device_class: 'current'
