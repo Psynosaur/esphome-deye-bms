@@ -257,7 +257,7 @@ canbus:
             id(cell_low_temperature_charge).publish_state(x[4] & 0x80);
             id(cell_high_temperature_charge).publish_state(x[4] & 0x40);
             id(discharge_high_current).publish_state(x[4] & 0x20); 
-            id(charge_high_current).publish_state(x[4] & 0x01);
+            id(charge_high_current).publish_state(x[4] & 0x10);
             id(module_low_voltage).publish_state(x[4] & 0x8);
             id(module_high_voltage).publish_state(x[4] & 0x4);
             id(cell_low_voltage).publish_state(x[4] & 0x2);
