@@ -285,6 +285,7 @@ canbus:
             if(x[5] == 5) id(cell_manufacturer).publish_state("EVE 120Ah");
             if(x[5] == 6) id(cell_manufacturer).publish_state("PH 100Ah(214R)");
             if(x[5] == 7) id(cell_manufacturer).publish_state("ZENERGY 104Ah");
+            //ESP_LOGI("canid 0x35E:", "%02x %02x %02x %02x %02x %02x %02x %02x", x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7]); 
 
     - can_id: 0x35C
       then:
@@ -345,11 +346,11 @@ canbus:
     - can_id: 0x110
       then:
         - lambda: |-
-            id(pack_1_heat_mos_state).publish_state(x[3] & 0x80);
-            id(pack_1_precharge_mos_state).publish_state(x[3] & 0x40);
-            id(pack_1_discharge_mos_state).publish_state(x[3] & 0x20);
-            id(pack_1_charge_mos_state).publish_state(x[3] & 0x10);
-            id(pack_1_parallel_finish).publish_state(x[3] & 0x1);
+            id(pack_1_heat_mos_state).publish_state(x[7] & 0x80);
+            id(pack_1_precharge_mos_state).publish_state(x[7] & 0x40);
+            id(pack_1_discharge_mos_state).publish_state(x[7] & 0x20);
+            id(pack_1_charge_mos_state).publish_state(x[7] & 0x10);
+            id(pack_1_parallel_finish).publish_state(x[7] & 0x1);
 
     - can_id: 0x150 
       then:
@@ -459,11 +460,11 @@ canbus:
     - can_id: 0x111
       then:
         - lambda: |-
-            id(pack_2_heat_mos_state).publish_state(x[3] & 0x80);
-            id(pack_2_precharge_mos_state).publish_state(x[3] & 0x40);
-            id(pack_2_discharge_mos_state).publish_state(x[3] & 0x20);
-            id(pack_2_charge_mos_state).publish_state(x[3] & 0x10);
-            id(pack_2_parallel_finish).publish_state(x[3] & 0x1);
+            id(pack_2_heat_mos_state).publish_state(x[7] & 0x80);
+            id(pack_2_precharge_mos_state).publish_state(x[7] & 0x40);
+            id(pack_2_discharge_mos_state).publish_state(x[7] & 0x20);
+            id(pack_2_charge_mos_state).publish_state(x[7] & 0x10);
+            id(pack_2_parallel_finish).publish_state(x[7] & 0x1);
     
     - can_id: 0x151 
       then:
