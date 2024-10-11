@@ -193,8 +193,8 @@ canbus:
 ###########################################################################################################            
   - platform: esp32_can
     id: pcs_can
-    tx_pin: GPIO04
-    rx_pin: GPIO02
+    tx_pin: GPIO04 # CAN HIGH BLUE
+    rx_pin: GPIO016 # CAN LOW LIGHT-BLUE
     can_id: 4
     bit_rate: 500KBPS
     on_frame:
@@ -303,7 +303,7 @@ canbus:
             float voltage = ((x[1] << 8) | x[0]) / 100.0;
             id(battery_voltage).publish_state(voltage);
             float current = ((x[3] << 8) | x[2]) / 10.0;
-            if(x[3] > 0x80) current = short(~((x[3] << 8) | x[2]) + 1) / -10.0;
+            if(x[3] > 0x80) current = uint16_t(~((x[3] << 8) | x[2]) + 1) / -10.0;
             id(battery_current).publish_state(current);
             float temperature = ((x[5] << 8) | x[4]) / 10;
             id(battery_temperature).publish_state(temperature);
@@ -358,7 +358,7 @@ canbus:
             float voltage = ((x[1] << 8) | x[0]) / 10.0;
             id(pack_1_voltage).publish_state(voltage);
             float current = ((x[3] << 8) | x[2]) / 10.0;
-            if(x[3] > 0x80) current = short(~((x[3] << 8) | x[2]) + 1) / -10.0;
+            if(x[3] > 0x80) current = uint16_t(~((x[3] << 8) | x[2]) + 1) / -10.0;
             id(pack_1_current).publish_state(current);
             float soc = ((x[5] << 8) | x[4]) / 10.0;
             id(pack_1_soc).publish_state(soc);
@@ -383,18 +383,21 @@ canbus:
       then:
         - lambda: |-
             float mosmax = ((x[1] << 8) | x[0]) / 10.0;
-            if(x[1] > 0x80) mosmax = short(~((x[1] << 8) | x[0]) + 1) / -10.0;
+            if(x[1] > 0x80) mosmax = uint16_t(~((x[1] << 8) | x[0]) + 1) / -10.0;
             id(pack_1_mosmax).publish_state(mosmax);
             float heatmem = (x[3] << 8) | x[2];
-            if(x[3] > 0x80) heatmem = short(~((x[3] << 8) | x[2]) + 1) / -10.0;
+            if(x[3] > 0x80) heatmem = uint16_t(~((x[3] << 8) | x[2]) + 1) / -10.0;
             id(pack_1_heatmem).publish_state(heatmem);
-            int val3 = (x[5] << 8) | x[4];
-            int val4 = (x[7] << 8) | x[6];
+            int val3 = ((x[5] << 8) | x[4]);
+            id(pack_1_max_charge_current).publish_state(val3);
+            int val4 = ((x[7] << 8) | x[6]);
+            id(pack_1_max_discharge_current).publish_state(val4);
           # ESP_LOGI("canid 0x250:", "%.1f, %.1f, %d, %d", mosmax, heatmem, val3, val4 );
 
     - can_id: 0x400 
       then:
         - lambda: |-
+            // Process frame 
             if(x[0] == 0) id(pack_1_operation_mode).publish_state("idle");
             if(x[0] == 1) id(pack_1_operation_mode).publish_state("charging");
             if(x[0] == 2) id(pack_1_operation_mode).publish_state("discharging");
@@ -403,6 +406,14 @@ canbus:
             if(x[1] == 2) id(pack_1_fault_level).publish_state("serious fault");
             float cycles = ((x[3] << 8) | x[2]);
             id(pack_1_cycles).publish_state(cycles);
+            // Set cell balancing states based on x[4] and x[5]
+            //for (int i = 1; i <= 8; i++) {
+            //  std::to_string(high_position).c_str()
+            //  id(pack_1_cell_ + i + _balancing).publish_state(x[4] & (1 << (i - 1)));
+            //}
+            //for (int i = 9; i <= 16; i++) {
+            //  id(pack_1_cell_ + i + _balancing).publish_state(x[5] & (1 << (i - 9)));
+            //}
             id(pack_1_cell_1_balancing).publish_state(x[4] & 0x1);
             id(pack_1_cell_2_balancing).publish_state(x[4] & 0x2);
             id(pack_1_cell_3_balancing).publish_state(x[4] & 0x4);
@@ -472,7 +483,7 @@ canbus:
             float voltage = ((x[1] << 8) | x[0]) / 10.0;
             id(pack_2_voltage).publish_state(voltage);
             float current = ((x[3] << 8) | x[2]) / 10.0;
-            if(x[3] > 0x80) current = short(~((x[3] << 8) | x[2]) + 1) / -10.0;
+            if(x[3] > 0x80) current = uint16_t(~((x[3] << 8) | x[2]) + 1) / -10.0;
             id(pack_2_current).publish_state(current);
             float soc = ((x[5] << 8) | x[4]) / 10.0;
             id(pack_2_soc).publish_state(soc);
@@ -496,15 +507,20 @@ canbus:
       then:
         - lambda: |-
             float mosmax = ((x[1] << 8) | x[0]) / 10.0;
-            if(x[1] > 0x80) mosmax = short(~((x[1] << 8) | x[0]) + 1) / -10.0;
+            if(x[1] > 0x80) mosmax = uint16_t(~((x[1] << 8) | x[0]) + 1) / -10.0;
             id(pack_2_mosmax).publish_state(mosmax);
             float heatmem = (x[3] << 8) | x[2];
-            if(x[3] > 0x80) heatmem = short(~((x[3] << 8) | x[2]) + 1) / -10.0;
+            if(x[3] > 0x80) heatmem = uint16_t(~((x[3] << 8) | x[2]) + 1) / -10.0;
             id(pack_2_heatmem).publish_state(heatmem);
+            int val3 = ((x[5] << 8) | x[4]);
+            id(pack_2_max_charge_current).publish_state(val3);
+            int val4 = ((x[7] << 8) | x[6]);
+            id(pack_2_max_discharge_current).publish_state(val4);
 
     - can_id: 0x401
       then:
         - lambda: |-
+            // Process frame
             if(x[0] == 0) id(pack_2_operation_mode).publish_state("idle");
             if(x[0] == 1) id(pack_2_operation_mode).publish_state("charging");
             if(x[0] == 2) id(pack_2_operation_mode).publish_state("discharging");
@@ -661,7 +677,7 @@ sensor:
     id: "total_capacity"
     unit_of_measurement: 'Ah'
     device_class: 'energy'
-    state_class: 'measurement'
+    state_class: 'total_increasing'
     accuracy_decimals: 0
       
             
@@ -783,6 +799,22 @@ sensor:
     accuracy_decimals: 1
 
   - platform: template
+    name: "Pack 1 max charge current"
+    id: "pack_1_max_charge_current"
+    unit_of_measurement: 'A'
+    device_class: 'current'
+    state_class: 'measurement'
+    accuracy_decimals: 0
+  
+  - platform: template
+    name: "Pack 1 max discharge current"
+    id: "pack_1_max_discharge_current"
+    unit_of_measurement: 'A'
+    device_class: 'current'
+    state_class: 'measurement'
+    accuracy_decimals: 0
+
+  - platform: template
     name: "Pack 1 SoC"
     id: "pack_1_soc"
     unit_of_measurement: '%'
@@ -870,16 +902,20 @@ sensor:
     id: "pack_1_charged"
     unit_of_measurement: 'kWh'
     device_class: 'energy'
-    state_class: 'measurement'
-    accuracy_decimals: 3  
+    state_class: 'total_increasing'
+    accuracy_decimals: 3
+    filters:
+      - throttle: 1s  
 
   - platform: template
     name: "Pack 1 discharged"
     id: "pack_1_discharged"
     unit_of_measurement: 'kWh'
     device_class: 'energy'
-    state_class: 'measurement'
-    accuracy_decimals: 3  
+    state_class: 'total_increasing'
+    accuracy_decimals: 3
+    filters:
+      - throttle: 1s  
 
 ###########################################################################################################
 # Pack 1: Cell High and Lows
@@ -1102,6 +1138,22 @@ sensor:
     accuracy_decimals: 1
 
   - platform: template
+    name: "Pack 2 max charge current"
+    id: "pack_2_max_charge_current"
+    unit_of_measurement: 'A'
+    device_class: 'current'
+    state_class: 'measurement'
+    accuracy_decimals: 0
+  
+  - platform: template
+    name: "Pack 2 max discharge current"
+    id: "pack_2_max_discharge_current"
+    unit_of_measurement: 'A'
+    device_class: 'current'
+    state_class: 'measurement'
+    accuracy_decimals: 0
+
+  - platform: template
     name: "Pack 2 SoC"
     id: "pack_2_soc"
     unit_of_measurement: '%'
@@ -1189,16 +1241,20 @@ sensor:
     id: "pack_2_charged"
     unit_of_measurement: 'kWh'
     device_class: 'energy'
-    state_class: 'measurement'
-    accuracy_decimals: 3  
+    state_class: 'total_increasing'
+    accuracy_decimals: 3
+    filters:
+      - throttle: 1s  
 
   - platform: template
     name: "Pack 2 discharged"
     id: "pack_2_discharged"
     unit_of_measurement: 'kWh'
     device_class: 'energy'
-    state_class: 'measurement'
+    state_class: 'total_increasing'
     accuracy_decimals: 3  
+    filters:
+      - throttle: 1s
 
 ###########################################################################################################
 # Pack 2: Cell High and Lows
@@ -1744,7 +1800,9 @@ binary_sensor:
 ###########################################################################################################
 # CAN Senders
 ###########################################################################################################
-
+switch:
+  - platform: restart
+    name: "Restart Deye CAN ESP32"
 # switch:
 #   - platform: template
 #     id: "charge_discharge_off_button"
