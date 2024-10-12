@@ -444,17 +444,11 @@ canbus:
 
     - can_id: 0x700
       then:
-        - lambda: | # TODO: Keep value high, the values go to zero then to 7 then zero... ;/ 
-            uint16_t cnt[4];
-            cnt[0] = (x[1] << 8) | x[0];  // charge over voltage count
-            cnt[1] = (x[3] << 8) | x[2];  // discharge under voltage count
-            cnt[2] = (x[5] << 8) | x[4];  // short circuit count
-            cnt[3] = (x[7] << 8) | x[6];  // MOS over temp count
-            
-            if (cnt[0] > 0) id(pack_1_charge_over_voltage_count).publish_state(cnt[0]);
-            if (cnt[1] > 0) id(pack_1_discharge_under_voltage_count).publish_state(cnt[1]);
-            if (cnt[2] > 0) id(pack_1_short_circuit_count).publish_state(cnt[2]);
-            if (cnt[3] > 0) id(pack_1_mos_over_temp_count).publish_state(cnt[3]);
+        - lambda: | 
+            id(pack_1_charge_over_voltage_count).publish_state((x[1] << 8) | x[0]);
+            id(pack_1_discharge_under_voltage_count).publish_state((x[3] << 8) | x[2]);
+            id(pack_1_short_circuit_count).publish_state((x[5] << 8) | x[4]);
+            id(pack_1_mos_over_temp_count).publish_state((x[7] << 8) | x[6]);
             
     - can_id: 0x750
       then:
@@ -759,13 +753,13 @@ sensor:
     accuracy_decimals: 0 
 
   - platform: template
-    name: "Pack 1 charge over voltage count"
+    name: "Pack 1 charge over current count"
     id: "pack_1_charge_over_current_count"
     state_class: 'measurement'
     accuracy_decimals: 0   
 
   - platform: template
-    name: "Pack 1 discharge under voltage count"
+    name: "Pack 1 discharge under current count"
     id: "pack_1_discharge_over_current_count"
     state_class: 'measurement'
     accuracy_decimals: 0 
@@ -1098,13 +1092,13 @@ sensor:
     accuracy_decimals: 0 
 
   - platform: template
-    name: "Pack 2 charge over voltage count"
+    name: "Pack 2 charge over current count"
     id: "pack_2_charge_over_current_count"
     state_class: 'measurement'
     accuracy_decimals: 0   
 
   - platform: template
-    name: "Pack 2 discharge under voltage count"
+    name: "Pack 2 discharge under current count"
     id: "pack_2_discharge_over_current_count"
     state_class: 'measurement'
     accuracy_decimals: 0 
