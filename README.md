@@ -1,8 +1,8 @@
 ## ESPhome Deye batteries
 
 ### Prerequisites 
-  - ESP32 
-  - MCP2515 
+  - PCS 500K => ESP32 + CAN Transceiver board TJA1050 or SN65HVD230
+  - InterCan 250K => MCP2515 
 
 
 #### We run two CAN cables
