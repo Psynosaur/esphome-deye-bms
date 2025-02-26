@@ -18,7 +18,7 @@
   - CAN ID: 0x110 was only partially integrated
     - Bytes 0 to 6 were skipped, which is another 56 entities per pack ``:O``
    
-## Connection diagrams
+## Connection diagrams from [esphome.io](https://esphome.io)
   - MCP2515
     ![image](https://github.com/user-attachments/assets/1d4ead2f-428c-46f8-8b1c-fd2d710b731c)
   - TJA1050
