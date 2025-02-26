@@ -17,5 +17,12 @@
   - 142 for only pack 1 and 59 for each pack thereafter
   - CAN ID: 0x110 was only partially integrated
     - Bytes 0 to 6 were skipped, which is another 56 entities per pack ``:O``
+   
+## Connection diagrams
+  - MCP2515
+    ![image](https://github.com/user-attachments/assets/1d4ead2f-428c-46f8-8b1c-fd2d710b731c)
+  - TJA1050
+    ![image](https://github.com/user-attachments/assets/6fababd5-c5e9-45aa-99a7-93a4d97a6658)
+
 ## Thanks
  - [Adminius](https://github.com/Adminius/esphome-yaml-collection/blob/main/deye_rw-m6.1.yaml) for the work on PCS :)
