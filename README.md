@@ -19,6 +19,8 @@
     - Bytes 0 to 6 were skipped, which is another 56 entities per pack ``:O``
    
 ## Connection diagrams from [esphome.io](https://esphome.io)
+  - Esp pinout reference
+    ![image](https://github.com/user-attachments/assets/0e724823-9dc5-4361-9d6f-69b7dace4180)
   - MCP2515
     ![image](https://github.com/user-attachments/assets/1d4ead2f-428c-46f8-8b1c-fd2d710b731c)
   - TJA1050
