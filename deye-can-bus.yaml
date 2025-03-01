@@ -44,6 +44,12 @@ spi:
   mosi_pin: GPIO23 # Change to your wiring needs
   miso_pin: GPIO19 # Change to your wiring needs
 
+globals:
+  - id: send_flag
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
 canbus:
 ###########################################################################################################
 # This is for InterCAN (250KBPS), using MCP2515
@@ -216,6 +222,12 @@ canbus:
             id(battery_discharge_current_limit).publish_state(i_discharge);
             float u_min = ((x[7] << 8) | x[6]) / 10.0;
             id(battery_discharge_voltage).publish_state(u_min);
+            if (!id(send_flag)) {
+              std::vector<uint8_t> data{0x01};
+              id(mcp2515_can)->send_data(0x18A2FF80, true, data);
+              id(send_flag) = true;
+              ESP_LOGI("WE HAVE SENT OUR WAKE UP SIGNAL");
+            }
           #  ESP_LOGI("canid 0x351:", "U_max: %.1f V, I_charge %d A, I_discharge: %d A, U_min %.1f V", u_max, i_charge, i_discharge, u_min );
     - can_id: 0x355
       then:
@@ -314,13 +326,13 @@ canbus:
       then:
         - lambda: |-
             float cell_u_max = ((x[1] << 8) | x[0]) / 1000.0;
-            id(battery_max_cell_voltage_deye).publish_state(cell_u_max);
+            id(battery_max_cell_voltage).publish_state(cell_u_max);
             float cell_u_min = ((x[3] << 8) | x[2]) / 1000.0;
-            id(battery_min_cell_voltage_deye).publish_state(cell_u_min);
+            id(battery_min_cell_voltage).publish_state(cell_u_min);
             float temp_max = ((x[5] << 8) | x[4]) / 10.0;
-            id(battery_temp_max_deye).publish_state(temp_max);
+            id(battery_temp_max).publish_state(temp_max);
             float temp_min = ((x[7] << 8) | x[6]) / 10.0;
-            id(battery_temp_min_deye).publish_state(temp_min);
+            id(battery_temp_min).publish_state(temp_min);
 
     - can_id: 0x364
       then:
@@ -335,9 +347,9 @@ canbus:
       then:
         - lambda: |-
             int i_charge = ((x[1] << 8) | x[0]) / 10;
-            id(battery_charge_current_limit_deye).publish_state(i_charge);
+            id(battery_array_charge_current_limit).publish_state(i_charge);
             int i_discharge = ((x[3] << 8) | x[2]) / 10;
-            id(battery_discharge_current_limit_deye).publish_state(i_discharge);
+            id(battery_array_discharge_current_limit).publish_state(i_discharge);
 
 ###########################################################################################################
 # Pack 1: Frames
@@ -678,7 +690,7 @@ sensor:
 #Deye battery specific    
   - platform: template
     name: "Battery max cell voltage"
-    id: "battery_max_cell_voltage_deye"
+    id: "battery_max_cell_voltage"
     unit_of_measurement: 'V'
     device_class: 'voltage'
     state_class: 'measurement'
@@ -686,7 +698,7 @@ sensor:
 
   - platform: template
     name: "Battery min cell voltage"
-    id: "battery_min_cell_voltage_deye"
+    id: "battery_min_cell_voltage"
     unit_of_measurement: 'V'
     device_class: 'voltage'
     state_class: 'measurement'
@@ -694,7 +706,7 @@ sensor:
 
   - platform: template
     name: "Battery temp max"
-    id: "battery_temp_max_deye"
+    id: "battery_temp_max"
     unit_of_measurement: '°C'
     device_class: 'temperature'
     state_class: 'measurement'
@@ -702,23 +714,23 @@ sensor:
 
   - platform: template
     name: "Battery temp min"
-    id: "battery_temp_min_deye"
+    id: "battery_temp_min"
     unit_of_measurement: '°C'
     device_class: 'temperature'
     state_class: 'measurement'
     accuracy_decimals: 1
 
   - platform: template
-    name: "Battery charge current limit"
-    id: "battery_charge_current_limit_deye"
+    name: "Battery array charge current limit"
+    id: "battery_array_charge_current_limit"
     unit_of_measurement: 'A'
     device_class: 'current'
     state_class: 'measurement'
     accuracy_decimals: 0
 
   - platform: template
-    name: "Battery discharge current limit"
-    id: "battery_discharge_current_limit_deye"
+    name: "Battery array discharge current limit"
+    id: "battery_array_discharge_current_limit"
     unit_of_measurement: 'A'
     device_class: 'current'
     state_class: 'measurement'
@@ -729,49 +741,49 @@ sensor:
 ########################################################################################################### 
 
   - platform: template
-    name: "Pack 1 charge over voltage count"
+    name: "Pack 1 counts of charge over voltage "
     id: "pack_1_charge_over_voltage_count"
     state_class: 'measurement'
     accuracy_decimals: 0   
 
   - platform: template
-    name: "Pack 1 discharge under voltage count"
+    name: "Pack 1 counts of discharge under voltage"
     id: "pack_1_discharge_under_voltage_count"
     state_class: 'measurement'
     accuracy_decimals: 0 
 
   - platform: template
-    name: "Pack 1 short circuit count"
+    name: "Pack 1 counts of short circuit"
     id: "pack_1_short_circuit_count"
     state_class: 'measurement'
     accuracy_decimals: 0 
   
   - platform: template
-    name: "Pack 1 mos over temp count"
+    name: "Pack 1 counts of mos over temp"
     id: "pack_1_mos_over_temp_count"
     state_class: 'measurement'
     accuracy_decimals: 0 
 
   - platform: template
-    name: "Pack 1 charge over current count"
+    name: "Pack 1 counts of charge over current"
     id: "pack_1_charge_over_current_count"
     state_class: 'measurement'
     accuracy_decimals: 0   
 
   - platform: template
-    name: "Pack 1 discharge under current count"
+    name: "Pack 1 counts of discharge under current"
     id: "pack_1_discharge_over_current_count"
     state_class: 'measurement'
     accuracy_decimals: 0 
 
   - platform: template
-    name: "Pack 1 charge over temp count"
+    name: "Pack 1 counts of charge over temp"
     id: "pack_1_charge_over_temp_count"
     state_class: 'measurement'
     accuracy_decimals: 0 
   
   - platform: template
-    name: "Pack 1 discharge over temp count"
+    name: "Pack 1 counts of discharge over temp"
     id: "pack_1_discharge_over_temp_count"
     state_class: 'measurement'
     accuracy_decimals: 0
@@ -1068,49 +1080,49 @@ sensor:
 ###########################################################################################################  
 
   - platform: template
-    name: "Pack 2 charge over voltage count"
+    name: "Pack 2 counts of charge over voltage"
     id: "pack_2_charge_over_voltage_count"
     state_class: 'measurement'
     accuracy_decimals: 0   
 
   - platform: template
-    name: "Pack 2 discharge under voltage count"
+    name: "Pack 2 counts of discharge under voltage"
     id: "pack_2_discharge_under_voltage_count"
     state_class: 'measurement'
     accuracy_decimals: 0
 
   - platform: template
-    name: "Pack 2 short circuit count"
+    name: "Pack 2 counts of short circuit"
     id: "pack_2_short_circuit_count"
     state_class: 'measurement'
     accuracy_decimals: 0 
   
   - platform: template
-    name: "Pack 2 mos over temp count"
+    name: "Pack 2 counts of mos over temp"
     id: "pack_2_mos_over_temp_count"
     state_class: 'measurement'
     accuracy_decimals: 0 
 
   - platform: template
-    name: "Pack 2 charge over current count"
+    name: "Pack 2 counts of charge over current"
     id: "pack_2_charge_over_current_count"
     state_class: 'measurement'
     accuracy_decimals: 0   
 
   - platform: template
-    name: "Pack 2 discharge under current count"
+    name: "Pack 2 counts of discharge under current"
     id: "pack_2_discharge_over_current_count"
     state_class: 'measurement'
     accuracy_decimals: 0 
 
   - platform: template
-    name: "Pack 2 charge over temp count"
+    name: "Pack 2 counts of charge over temp"
     id: "pack_2_charge_over_temp_count"
     state_class: 'measurement'
     accuracy_decimals: 0 
   
   - platform: template
-    name: "Pack 2 discharge over temp count"
+    name: "Pack 2 counts of discharge over temp"
     id: "pack_2_discharge_over_temp_count"
     state_class: 'measurement'
     accuracy_decimals: 0
