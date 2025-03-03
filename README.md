@@ -1,11 +1,10 @@
 ## ESPhome Deye batteries
 
 ### Prerequisites 
-  - PCS 500K => ESP32 + CAN Transceiver board TJA1050 or SN65HVD230
-  - InterCan 250K => MCP2515 
+  - PCS CAN BUS: Baudrate: 500K => ESP32 + CAN Transceiver board TJA1050 or SN65HVD230
+  - InterCan CAN BUS: Baudrate: 250K => MCP2515 over SPI
 
-
-#### We run two CAN cables
+#### We run two CAN LAN cables
  - PCS which gives array summary information
    - We use a RJ45 splitter so that the inverter maintains communication with the top computer BMS
  - InterCAN which gives more specific information like cell voltages
