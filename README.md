@@ -18,6 +18,7 @@
     - Bytes 0 to 6 were skipped, which is another 56 entities per pack ``:O``
    
 ## Connection diagrams from [esphome.io](https://esphome.io)
+[check it out on the wiki](https://github.com/Psynosaur/esphome-deye-bms/wiki#connection-diagram)
   - Esp pinout reference
     ![image](https://github.com/user-attachments/assets/0e724823-9dc5-4361-9d6f-69b7dace4180)
   - MCP2515
