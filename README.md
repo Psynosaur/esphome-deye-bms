@@ -19,14 +19,6 @@
    
 ## Connection diagrams from [esphome.io](https://esphome.io)
 [check it out on the wiki](https://github.com/Psynosaur/esphome-deye-bms/wiki#connection-diagram)
-  - Esp pinout reference
-    ![image](https://github.com/user-attachments/assets/0e724823-9dc5-4361-9d6f-69b7dace4180)
-  - MCP2515
-    ![image](https://github.com/user-attachments/assets/1d4ead2f-428c-46f8-8b1c-fd2d710b731c)
-  - TJA1050
-    ![image](https://github.com/user-attachments/assets/6fababd5-c5e9-45aa-99a7-93a4d97a6658)
-  - SN65HVD230 transciever board
-    ![image](https://github.com/user-attachments/assets/f3f4f72a-d383-4e9b-b36a-9e21102f5f83)
 
 ## Thanks
  - [Adminius](https://github.com/Adminius/esphome-yaml-collection/blob/main/deye_rw-m6.1.yaml) for the work on PCS :)
