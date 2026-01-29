@@ -1,0 +1,758 @@
+esphome:
+  name: hv-bms
+  friendly_name: HV BMS
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+logger:
+  baud_rate: 0
+  level: WARN
+
+web_server:
+  port: 80
+  auth:
+    username: admin
+    password: admin
+
+api:
+  encryption:
+    key: "xxxx"
+
+ota:
+  - platform: esphome
+    password: "xxxx"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  min_auth_mode: WPA2
+
+# Throttle interval global variable
+globals:
+  - id: throttle_interval
+    type: int
+    restore_value: no
+    initial_value: '5000'  # 5 seconds in milliseconds
+
+interval:
+  # Request CAN data every 5 seconds
+  - interval: 5s
+    then:
+      - logger.log: "Requesting CAN data update"
+
+spi:
+  clk_pin: GPIO18
+  mosi_pin: GPIO23
+  miso_pin: GPIO19
+
+canbus:
+  - platform: mcp2515
+    id: my_mcp2515
+    cs_pin: GPIO5
+    can_id: 4
+    bit_rate: 500kbps
+    on_frame:
+    
+    # 0x4210 - Battery Pile Total Voltage, Current, Temperature, SOC, SOH
+    - can_id: 0x4210
+      use_extended_id: true
+      then:
+        - lambda: |-
+            float voltage = ((x[1] << 8) | x[0]) * 0.1;
+            id(battery_voltage).publish_state(voltage);
+            float current = (((x[3] << 8) | x[2]) - 30000) * 0.1;
+            id(battery_current).publish_state(current);
+            float temp = (((x[5] << 8) | x[4]) - 1000) * 0.1;
+            id(battery_temperature).publish_state(temp);
+            float soc = x[6];
+            id(battery_soc).publish_state(soc);
+            float soh = x[7];
+            id(battery_soh).publish_state(soh);
+
+    # 0x4220 - Charge/Discharge Cutoff Voltage and Max Current
+    - can_id: 0x4220
+      use_extended_id: true
+      then:
+        - lambda: |-
+            float charge_cutoff_v = ((x[1] << 8) | x[0]) * 0.1;
+            id(charge_cutoff_voltage).publish_state(charge_cutoff_v);
+            float discharge_cutoff_v = ((x[3] << 8) | x[2]) * 0.1;
+            id(discharge_cutoff_voltage).publish_state(discharge_cutoff_v);
+            float max_charge_i = (((x[5] << 8) | x[4]) - 30000) * 0.1;
+            id(max_charge_current).publish_state(max_charge_i);
+            float max_discharge_i = (((x[7] << 8) | x[6]) - 30000) * 0.1;
+            id(max_discharge_current).publish_state(max_discharge_i);
+
+    # 0x4230 - Max/Min Single Cell Voltage
+    - can_id: 0x4230
+      use_extended_id: true
+      then:
+        - lambda: |-
+            float max_cell_v = ((x[1] << 8) | x[0]) * 0.001;
+            id(max_cell_voltage).publish_state(max_cell_v);
+            float min_cell_v = ((x[3] << 8) | x[2]) * 0.001;
+            id(min_cell_voltage).publish_state(min_cell_v);
+            int max_cell_num = x[4];
+            id(max_cell_number).publish_state(max_cell_num);
+            int min_cell_num = x[6];
+            id(min_cell_number).publish_state(min_cell_num);
+
+    # 0x4240 - Max/Min Single Cell Temperature
+    - can_id: 0x4240
+      use_extended_id: true
+      then:
+        - lambda: |-
+            float max_cell_temp = (((x[1] << 8) | x[0]) - 1000) * 0.1;
+            id(max_cell_temperature).publish_state(max_cell_temp);
+            float min_cell_temp = (((x[3] << 8) | x[2]) - 1000) * 0.1;
+            id(min_cell_temperature).publish_state(min_cell_temp);
+            int max_temp_num = x[4];
+            id(max_temp_number).publish_state(max_temp_num);
+            int min_temp_num = x[6];
+            id(min_temp_number).publish_state(min_temp_num);
+
+    # 0x4250 - Basic Status, Cycle Period, Fault, Alarm, Protection
+    - can_id: 0x4250
+      use_extended_id: true
+      then:
+        - lambda: |-
+            // Basic Status (Byte0)
+            int status = x[0] & 0x07;
+            if(status == 0) id(battery_status).publish_state("Sleep");
+            else if(status == 1) id(battery_status).publish_state("Charging");
+            else if(status == 2) id(battery_status).publish_state("Discharging");
+            else if(status == 3) id(battery_status).publish_state("Idle");
+            else id(battery_status).publish_state("Reserve");
+            
+            id(forced_charge_request).publish_state(x[0] & 0x08);
+            id(balance_charge_request).publish_state(x[0] & 0x10);
+            
+            // Cycle Period
+            int cycles = (x[2] << 8) | x[1];
+            id(cycle_period).publish_state(cycles);
+            
+            // Fault (Byte3) - See Table 2
+            id(voltage_sensor_error).publish_state(x[3] & 0x01);
+            id(temp_sensor_error).publish_state(x[3] & 0x02);
+            id(internal_comm_error).publish_state(x[3] & 0x04);
+            id(input_overvoltage_error).publish_state(x[3] & 0x08);
+            id(input_transposition_error).publish_state(x[3] & 0x10);
+            id(relay_check_error).publish_state(x[3] & 0x20);
+            id(battery_cell_error).publish_state(x[3] & 0x40);
+            id(other_error).publish_state(x[3] & 0x80);
+            
+            // Alarm (Byte4-5) - See Table 3
+            uint16_t alarm = (x[5] << 8) | x[4];
+            id(cell_low_voltage_alarm).publish_state(alarm & 0x0001);
+            id(cell_high_voltage_alarm).publish_state(alarm & 0x0002);
+            id(discharge_low_voltage_alarm).publish_state(alarm & 0x0004);
+            id(charge_high_voltage_alarm).publish_state(alarm & 0x0008);
+            id(charge_low_temp_alarm).publish_state(alarm & 0x0010);
+            id(charge_high_temp_alarm).publish_state(alarm & 0x0020);
+            id(discharge_low_temp_alarm).publish_state(alarm & 0x0040);
+            id(discharge_high_temp_alarm).publish_state(alarm & 0x0080);
+            id(charge_overcurrent_alarm).publish_state(alarm & 0x0100);
+            id(discharge_overcurrent_alarm).publish_state(alarm & 0x0200);
+            id(module_low_voltage_alarm).publish_state(alarm & 0x0400);
+            id(module_high_voltage_alarm).publish_state(alarm & 0x0800);
+            
+            // Protection (Byte6-7) - See Table 4
+            uint16_t protection = (x[7] << 8) | x[6];
+            id(cell_undervoltage_protect).publish_state(protection & 0x0001);
+            id(cell_overvoltage_protect).publish_state(protection & 0x0002);
+            id(discharge_undervoltage_protect).publish_state(protection & 0x0004);
+            id(charge_overvoltage_protect).publish_state(protection & 0x0008);
+            id(charge_undertemp_protect).publish_state(protection & 0x0010);
+            id(charge_overtemp_protect).publish_state(protection & 0x0020);
+            id(discharge_undertemp_protect).publish_state(protection & 0x0040);
+            id(discharge_overtemp_protect).publish_state(protection & 0x0080);
+            id(charge_overcurrent_protect).publish_state(protection & 0x0100);
+            id(discharge_overcurrent_protect).publish_state(protection & 0x0200);
+            id(module_undervoltage_protect).publish_state(protection & 0x0400);
+            id(module_overvoltage_protect).publish_state(protection & 0x0800);
+
+    # 0x4260 - Module Max/Min Voltage
+    - can_id: 0x4260
+      use_extended_id: true
+      then:
+        - lambda: |-
+            float module_max_v = ((x[1] << 8) | x[0]) * 0.001;
+            id(module_max_voltage).publish_state(module_max_v);
+            float module_min_v = ((x[3] << 8) | x[2]) * 0.001;
+            id(module_min_voltage).publish_state(module_min_v);
+            int module_max_num = x[4];
+            id(module_max_voltage_number).publish_state(module_max_num);
+            int module_min_num = x[6];
+            id(module_min_voltage_number).publish_state(module_min_num);
+
+    # 0x4270 - Module Max/Min Temperature
+    - can_id: 0x4270
+      use_extended_id: true
+      then:
+        - lambda: |-
+            float module_max_temp = (((x[1] << 8) | x[0]) - 1000) * 0.1;
+            id(module_max_temperature).publish_state(module_max_temp);
+            float module_min_temp = (((x[3] << 8) | x[2]) - 1000) * 0.1;
+            id(module_min_temperature).publish_state(module_min_temp);
+            int module_max_temp_num = x[4];
+            id(module_max_temp_number).publish_state(module_max_temp_num);
+            int module_min_temp_num = x[6];
+            id(module_min_temp_number).publish_state(module_min_temp_num);
+
+    # 0x4280 - Charge/Discharge Forbidden Marks
+    - can_id: 0x4280
+      use_extended_id: true
+      then:
+        - lambda: |-
+            id(charge_forbidden).publish_state(x[0] == 0xAA);
+            id(discharge_forbidden).publish_state(x[1] == 0xAA);
+
+    # 0x4290 - Extended Fault
+    - can_id: 0x4290
+      use_extended_id: true
+      then:
+        - lambda: |-
+            id(shutdown_circuit_error).publish_state(x[0] & 0x01);
+            id(bmic_error).publish_state(x[0] & 0x02);
+            id(internal_bus_error).publish_state(x[0] & 0x04);
+            id(self_test_error).publish_state(x[0] & 0x08);
+
+    # 0x42E0 - Serial Number (ASCII)
+    - can_id: 0x42E0
+      use_extended_id: true
+      then:
+        - lambda: |-
+            char serial[9];
+            for(int i = 0; i < 8; i++) {
+              serial[i] = x[i];
+            }
+            serial[8] = '\0';
+            id(serial_number).publish_state(serial);
+
+    # 0x42F0 - Manufacturer Name (ASCII)
+    - can_id: 0x42F0
+      use_extended_id: true
+      then:
+        - lambda: |-
+            char manufacturer[9];
+            for(int i = 0; i < 8; i++) {
+              manufacturer[i] = x[i];
+            }
+            manufacturer[8] = '\0';
+            id(manufacturer_name).publish_state(manufacturer);
+
+    # 0x7310 - System Equipment Info (Hardware/Software Version)
+    - can_id: 0x7310
+      use_extended_id: true
+      then:
+        - lambda: |-
+            std::string hw_ver = "V" + std::to_string(x[2]) + "." + std::to_string(x[3]);
+            id(hardware_version).publish_state(hw_ver);
+            std::string sw_ver = "V" + std::to_string(x[4]) + "." + std::to_string(x[5]);
+            id(software_version).publish_state(sw_ver);
+
+    # 0x7320 - System Equipment Info (Battery Config)
+    - can_id: 0x7320
+      use_extended_id: true
+      then:
+        - lambda: |-
+            int module_qty = x[0];
+            id(battery_module_qty).publish_state(module_qty);
+            int total_batteries = x[1];
+            id(battery_total_qty).publish_state(total_batteries);
+            int series_modules = x[2];
+            id(series_module_qty).publish_state(series_modules);
+            int cells_count = x[3];
+            id(cells_per_module).publish_state(cells_count);
+            int voltage_lvl = ((x[5] << 8) | x[4]);
+            id(voltage_level).publish_state(voltage_lvl);
+            int capacity = ((x[7] << 8) | x[6]);
+            id(battery_capacity).publish_state(capacity);
+
+sensor:
+  - platform: template
+    name: "Battery Voltage"
+    id: battery_voltage
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 1
+    filters:
+      - throttle: 5s
+
+  - platform: template
+    name: "Battery Current"
+    id: battery_current
+    unit_of_measurement: 'A'
+    device_class: 'current'
+    state_class: 'measurement'
+    accuracy_decimals: 1
+    filters:
+      - throttle: 5s
+
+  - platform: template
+    name: "Battery Temperature"
+    id: battery_temperature
+    unit_of_measurement: '°C'
+    device_class: 'temperature'
+    state_class: 'measurement'
+    accuracy_decimals: 1
+    filters:
+      - throttle: 5s
+
+  - platform: template
+    name: "Battery SoC"
+    id: battery_soc
+    unit_of_measurement: '%'
+    device_class: 'battery'
+    state_class: 'measurement'
+    accuracy_decimals: 0
+    filters:
+      - throttle: 5s
+
+  - platform: template
+    name: "Battery SoH"
+    id: battery_soh
+    unit_of_measurement: '%'
+    state_class: 'measurement'
+    accuracy_decimals: 0
+    filters:
+      - throttle: 5s
+
+  - platform: template
+    name: "Charge Cutoff Voltage"
+    id: charge_cutoff_voltage
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 1
+    filters:
+      - throttle: 5s
+
+  - platform: template
+    name: "Discharge Cutoff Voltage"
+    id: discharge_cutoff_voltage
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 1
+    filters:
+      - throttle: 5s
+
+  - platform: template
+    name: "Max Charge Current"
+    id: max_charge_current
+    unit_of_measurement: 'A'
+    device_class: 'current'
+    state_class: 'measurement'
+    accuracy_decimals: 1
+    filters:
+      - throttle: 5s
+
+  - platform: template
+    name: "Max Discharge Current"
+    id: max_discharge_current
+    unit_of_measurement: 'A'
+    device_class: 'current'
+    state_class: 'measurement'
+    accuracy_decimals: 1
+    filters:
+      - throttle: 5s
+
+  - platform: template
+    name: "Max Cell Voltage"
+    id: max_cell_voltage
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3
+    filters:
+      - throttle: 5s
+
+  - platform: template
+    name: "Min Cell Voltage"
+    id: min_cell_voltage
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3
+    filters:
+      - throttle: 5s
+
+  - platform: template
+    name: "Max Cell Number"
+    id: max_cell_number
+    state_class: 'measurement'
+    accuracy_decimals: 0
+    filters:
+      - throttle: 5s
+
+  - platform: template
+    name: "Min Cell Number"
+    id: min_cell_number
+    state_class: 'measurement'
+    accuracy_decimals: 0
+    filters:
+      - throttle: 5s
+
+  - platform: template
+    name: "Max Cell Temperature"
+    id: max_cell_temperature
+    unit_of_measurement: '°C'
+    device_class: 'temperature'
+    state_class: 'measurement'
+    accuracy_decimals: 1
+    filters:
+      - throttle: 5s
+
+  - platform: template
+    name: "Min Cell Temperature"
+    id: min_cell_temperature
+    unit_of_measurement: '°C'
+    device_class: 'temperature'
+    state_class: 'measurement'
+    accuracy_decimals: 1
+    filters:
+      - throttle: 5s
+
+  - platform: template
+    name: "Max Temperature Number"
+    id: max_temp_number
+    state_class: 'measurement'
+    accuracy_decimals: 0
+    filters:
+      - throttle: 5s
+
+  - platform: template
+    name: "Min Temperature Number"
+    id: min_temp_number
+    state_class: 'measurement'
+    accuracy_decimals: 0
+    filters:
+      - throttle: 5s
+
+  - platform: template
+    name: "Cycle Period"
+    id: cycle_period
+    state_class: 'measurement'
+    accuracy_decimals: 0
+    filters:
+      - throttle: 5s
+
+  - platform: template
+    name: "Module Max Voltage"
+    id: module_max_voltage
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3
+    filters:
+      - throttle: 5s
+
+  - platform: template
+    name: "Module Min Voltage"
+    id: module_min_voltage
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 3
+    filters:
+      - throttle: 5s
+
+  - platform: template
+    name: "Module Max Voltage Number"
+    id: module_max_voltage_number
+    state_class: 'measurement'
+    accuracy_decimals: 0
+    filters:
+      - throttle: 5s
+
+  - platform: template
+    name: "Module Min Voltage Number"
+    id: module_min_voltage_number
+    state_class: 'measurement'
+    accuracy_decimals: 0
+    filters:
+      - throttle: 5s
+
+  - platform: template
+    name: "Module Max Temperature"
+    id: module_max_temperature
+    unit_of_measurement: '°C'
+    device_class: 'temperature'
+    state_class: 'measurement'
+    accuracy_decimals: 1
+    filters:
+      - throttle: 5s
+
+  - platform: template
+    name: "Module Min Temperature"
+    id: module_min_temperature
+    unit_of_measurement: '°C'
+    device_class: 'temperature'
+    state_class: 'measurement'
+    accuracy_decimals: 1
+    filters:
+      - throttle: 5s
+
+  - platform: template
+    name: "Module Max Temperature Number"
+    id: module_max_temp_number
+    state_class: 'measurement'
+    accuracy_decimals: 0
+    filters:
+      - throttle: 5s
+
+  - platform: template
+    name: "Module Min Temperature Number"
+    id: module_min_temp_number
+    state_class: 'measurement'
+    accuracy_decimals: 0
+    filters:
+      - throttle: 5s
+
+  - platform: template
+    name: "Battery Module Qty"
+    id: battery_module_qty
+    state_class: 'measurement'
+    accuracy_decimals: 0
+    filters:
+      - throttle: 5s
+
+  - platform: template
+    name: "Battery Total Qty"
+    id: battery_total_qty
+    state_class: 'measurement'
+    accuracy_decimals: 0
+    filters:
+      - throttle: 5s
+
+  - platform: template
+    name: "Series Module Qty"
+    id: series_module_qty
+    state_class: 'measurement'
+    accuracy_decimals: 0
+    filters:
+      - throttle: 5s
+
+  - platform: template
+    name: "Cells Per Module"
+    id: cells_per_module
+    state_class: 'measurement'
+    accuracy_decimals: 0
+    filters:
+      - throttle: 5s
+
+  - platform: template
+    name: "Voltage Level"
+    id: voltage_level
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    state_class: 'measurement'
+    accuracy_decimals: 0
+    filters:
+      - throttle: 5s
+
+  - platform: template
+    name: "Battery Capacity"
+    id: battery_capacity
+    unit_of_measurement: 'Ah'
+    state_class: 'measurement'
+    accuracy_decimals: 0
+    filters:
+      - throttle: 5s
+
+text_sensor:
+  - platform: template
+    name: "Battery Status"
+    id: battery_status
+
+  - platform: template
+    name: "Serial Number"
+    id: serial_number
+
+  - platform: template
+    name: "Manufacturer Name"
+    id: manufacturer_name
+
+  - platform: template
+    name: "Hardware Version"
+    id: hardware_version
+
+  - platform: template
+    name: "Software Version"
+    id: software_version
+
+binary_sensor:
+  # Basic Status Flags
+  - platform: template
+    name: "Forced Charge Request"
+    id: forced_charge_request
+
+  - platform: template
+    name: "Balance Charge Request"
+    id: balance_charge_request
+
+  # Fault Sensors (Table 2)
+  - platform: template
+    name: "Voltage Sensor Error"
+    id: voltage_sensor_error
+
+  - platform: template
+    name: "Temperature Sensor Error"
+    id: temp_sensor_error
+
+  - platform: template
+    name: "Internal Communication Error"
+    id: internal_comm_error
+
+  - platform: template
+    name: "Input Overvoltage Error"
+    id: input_overvoltage_error
+
+  - platform: template
+    name: "Input Transposition Error"
+    id: input_transposition_error
+
+  - platform: template
+    name: "Relay Check Error"
+    id: relay_check_error
+
+  - platform: template
+    name: "Battery Cell Error"
+    id: battery_cell_error
+
+  - platform: template
+    name: "Other Error"
+    id: other_error
+
+  # Alarm Sensors (Table 3)
+  - platform: template
+    name: "Cell Low Voltage Alarm"
+    id: cell_low_voltage_alarm
+
+  - platform: template
+    name: "Cell High Voltage Alarm"
+    id: cell_high_voltage_alarm
+
+  - platform: template
+    name: "Discharge Low Voltage Alarm"
+    id: discharge_low_voltage_alarm
+
+  - platform: template
+    name: "Charge High Voltage Alarm"
+    id: charge_high_voltage_alarm
+
+  - platform: template
+    name: "Charge Low Temperature Alarm"
+    id: charge_low_temp_alarm
+
+  - platform: template
+    name: "Charge High Temperature Alarm"
+    id: charge_high_temp_alarm
+
+  - platform: template
+    name: "Discharge Low Temperature Alarm"
+    id: discharge_low_temp_alarm
+
+  - platform: template
+    name: "Discharge High Temperature Alarm"
+    id: discharge_high_temp_alarm
+
+  - platform: template
+    name: "Charge Overcurrent Alarm"
+    id: charge_overcurrent_alarm
+
+  - platform: template
+    name: "Discharge Overcurrent Alarm"
+    id: discharge_overcurrent_alarm
+
+  - platform: template
+    name: "Module Low Voltage Alarm"
+    id: module_low_voltage_alarm
+
+  - platform: template
+    name: "Module High Voltage Alarm"
+    id: module_high_voltage_alarm
+
+  # Protection Sensors (Table 4)
+  - platform: template
+    name: "Cell Undervoltage Protection"
+    id: cell_undervoltage_protect
+
+  - platform: template
+    name: "Cell Overvoltage Protection"
+    id: cell_overvoltage_protect
+
+  - platform: template
+    name: "Discharge Undervoltage Protection"
+    id: discharge_undervoltage_protect
+
+  - platform: template
+    name: "Charge Overvoltage Protection"
+    id: charge_overvoltage_protect
+
+  - platform: template
+    name: "Charge Undertemperature Protection"
+    id: charge_undertemp_protect
+
+  - platform: template
+    name: "Charge Overtemperature Protection"
+    id: charge_overtemp_protect
+
+  - platform: template
+    name: "Discharge Undertemperature Protection"
+    id: discharge_undertemp_protect
+
+  - platform: template
+    name: "Discharge Overtemperature Protection"
+    id: discharge_overtemp_protect
+
+  - platform: template
+    name: "Charge Overcurrent Protection"
+    id: charge_overcurrent_protect
+
+  - platform: template
+    name: "Discharge Overcurrent Protection"
+    id: discharge_overcurrent_protect
+
+  - platform: template
+    name: "Module Undervoltage Protection"
+    id: module_undervoltage_protect
+
+  - platform: template
+    name: "Module Overvoltage Protection"
+    id: module_overvoltage_protect
+
+  # Charge/Discharge Forbidden
+  - platform: template
+    name: "Charge Forbidden"
+    id: charge_forbidden
+
+  - platform: template
+    name: "Discharge Forbidden"
+    id: discharge_forbidden
+
+  # Extended Fault (Table 5)
+  - platform: template
+    name: "Shutdown Circuit Error"
+    id: shutdown_circuit_error
+
+  - platform: template
+    name: "BMIC Error"
+    id: bmic_error
+
+  - platform: template
+    name: "Internal Bus Error"
+    id: internal_bus_error
+
+  - platform: template
+    name: "Self Test Error"
+    id: self_test_error
+
+switch:
+  - platform: restart
+    name: "Restart CAN ESP32"
